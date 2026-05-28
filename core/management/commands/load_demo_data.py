@@ -166,4 +166,51 @@ class Command(BaseCommand):
                     inv.save()
             self.stdout.write('  Created demo invoices')
 
+        # Demo service categories and services
+        from services.models import ServiceCategory, Service
+        service_cat_data = [
+            ('Consultation', 'fa-user-md', 'Doctor consultation services'),
+            ('Laboratory', 'fa-flask', 'Lab tests and diagnostics'),
+            ('Radiology', 'fa-x-ray', 'Imaging and radiology services'),
+            ('Procedures', 'fa-syringe', 'Minor and major procedures'),
+            ('Pharmacy', 'fa-pills', 'Medication and pharmacy'),
+            ('Room & Board', 'fa-bed', 'Inpatient accommodation'),
+            ('Emergency', 'fa-ambulance', 'Emergency services'),
+            ('Therapy', 'fa-hands-helping', 'Physiotherapy and rehabilitation'),
+        ]
+        categories = {}
+        for name, icon, desc in service_cat_data:
+            cat, created = ServiceCategory.objects.get_or_create(name=name,
+                defaults={'icon': icon, 'description': desc})
+            categories[name] = cat
+            if created:
+                self.stdout.write(f'  Category: {name}')
+
+        service_data = [
+            ('General Consultation', 'CONS-001', 'opd', 'Consultation', 50.00, 30),
+            ('Specialist Consultation', 'CONS-002', 'opd', 'Consultation', 100.00, 30),
+            ('Emergency Consultation', 'CONS-003', 'emergency', 'Emergency', 150.00, 30),
+            ('CBC Test', 'LAB-001', 'diagnostic', 'Laboratory', 10.00, 60),
+            ('Blood Glucose', 'LAB-002', 'diagnostic', 'Laboratory', 5.00, 45),
+            ('Liver Function Test', 'LAB-003', 'diagnostic', 'Laboratory', 25.00, 120),
+            ('Chest X-Ray', 'RAD-001', 'diagnostic', 'Radiology', 40.00, 30),
+            ('Abdominal Ultrasound', 'RAD-002', 'diagnostic', 'Radiology', 80.00, 45),
+            ('CT Scan Head', 'RAD-003', 'diagnostic', 'Radiology', 200.00, 60),
+            ('IV Cannulation', 'PROC-001', 'procedure', 'Procedures', 15.00, 20),
+            ('Wound Dressing', 'PROC-002', 'procedure', 'Procedures', 20.00, 30),
+            ('Suturing (per stitch)', 'PROC-003', 'procedure', 'Procedures', 10.00, 30),
+            ('General Ward (per day)', 'ROOM-001', 'ipd', 'Room & Board', 80.00, 1440),
+            ('Private Room (per day)', 'ROOM-002', 'ipd', 'Room & Board', 200.00, 1440),
+            ('ICU (per day)', 'ROOM-003', 'ipd', 'Room & Board', 500.00, 1440),
+            ('Physiotherapy Session', 'THER-001', 'therapy', 'Therapy', 60.00, 60),
+        ]
+        for name, code, stype, cat_name, price, duration in service_data:
+            if not Service.objects.filter(code=code).exists():
+                Service.objects.create(
+                    name=name, code=code, service_type=stype,
+                    category=categories.get(cat_name, list(categories.values())[0]),
+                    price=price, duration_minutes=duration,
+                )
+                self.stdout.write(f'  Service: {name}')
+
         self.stdout.write(self.style.SUCCESS('\nDemo data loaded successfully!'))

@@ -13,4 +13,6 @@ urlpatterns = [
     path('billing/', include('billing.urls')),
     path('pharmacy/', include('pharmacy.urls')),
     path('laboratory/', include('laboratory.urls')),
+    path('services/', include('services.urls')),
+    path('clinical/', include('clinical.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% block title %}Consultations{% endblock %}
+{% block page_title %}Consultation Requests{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+<h5 class="mb-0 fw-semibold">Consultations</h5>
+<a href="{% url 'consultation_create' %}" class="btn btn-primary btn-sm"><i class="fas fa-plus me-1"></i>New Request</a>
+</div>
+<form method="get" class="row g-2 mb-3">
+<div class="col-md-3"><select name="status" class="form-select form-select-sm">
+<option value="">All Status</option>
+{% for val, label in status_choices %}<option value="{{ val }}" {% if status == val %}selected{% endif %}>{{ label }}</option>{% endfor %}
+</select></div>
+<div class="col-md-2"><button type="submit" class="btn btn-primary btn-sm w-100">Filter</button></div>
+</form>
+<div class="card">
+<div class="table-responsive">
+<table class="table table-hover mb-0">
+<thead><tr><th class="ps-4">Ref #</th><th>Patient</th><th>Requesting</th><th>Consulting</th><th>Priority</th><th>Status</th><th class="pe-4">Actions</th></tr></thead>
+<tbody>
+{% for c in consults %}
+<tr>
+<td class="ps-4 fw-semibold small">{{ c.request_number }}</td>
+<td><a href="{% url 'patient_detail' c.patient.pk %}" class="text-decoration-none">{{ c.patient.get_full_name }}</a></td>
+<td class="small">Dr. {{ c.requesting_doctor.user.get_full_name }}</td>
+<td class="small">Dr. {{ c.consulting_doctor.user.get_full_name }}</td>
+<td><span class="badge {% if c.priority == 'emergency' %}bg-danger{% elif c.priority == 'urgent' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">{{ c.get_priority_display }}</span></td>
+<td><span class="badge {% if c.status == 'completed' %}bg-success{% elif c.status == 'pending' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">{{ c.get_status_display }}</span></td>
+<td class="pe-4">
+{% if c.status == 'pending' %}
+<button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#respondModal{{ c.pk }}">Respond</button>
+{% else %}<span class="text-muted small">Done</span>{% endif %}
+</td>
+</tr>
+{% empty %}<tr><td colspan="7" class="text-center text-muted py-5">No consultations.</td></tr>{% endfor %}
+</tbody>
+</table>
+</div>
+</div>
+{% for c in consults %}
+{% if c.status == 'pending' %}
+<div class="modal fade" id="respondModal{{ c.pk }}">
+<div class="modal-dialog"><div class="modal-content">
+<div class="modal-header"><h6 class="modal-title">Respond: {{ c.request_number }}</h6><button class="btn-close" data-bs-dismiss="modal"></button></div>
+<form method="post" action="{% url 'consultation_respond' c.pk %}">{% csrf_token %}
+<div class="modal-body">
+<div class="mb-2 small text-muted"><b>Reason:</b> {{ c.reason }}</div>
+<div class="mb-3"><label class="form-label fw-semibold small">Response / Findings</label><textarea name="response" class="form-control" rows="4" required></textarea></div>
+<div class="mb-3"><label class="form-label fw-semibold small">Recommendations</label><textarea name="recommendations" class="form-control" rows="3"></textarea></div>
+<div><label class="form-label fw-semibold small">Status</label>
+<select name="status" class="form-select form-select-sm"><option value="completed">Completed</option><option value="accepted">Accepted</option><option value="declined">Declined</option></select></div>
+</div>
+<div class="modal-footer"><button type="submit" class="btn btn-primary btn-sm">Save Response</button></div>
+</form>
+</div></div>
+</div>
+{% endif %}
+{% endfor %}
+{% endblock %}

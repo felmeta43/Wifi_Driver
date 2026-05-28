@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block title %}Op Note {{ note.operation_number }}{% endblock %}
+{% block page_title %}Operation Note{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-end mb-3">
+<button onclick="window.print()" class="btn btn-outline-primary btn-sm"><i class="fas fa-print me-1"></i>Print</button>
+</div>
+<div class="card" id="op-note-print">
+<div class="card-body p-4">
+<div class="d-flex justify-content-between mb-4">
+<div><h5 class="fw-bold">OPERATION NOTE</h5><div class="text-muted small">{{ note.operation_number }}</div></div>
+<span class="badge {% if note.status == 'completed' %}bg-success{% else %}bg-warning text-dark{% endif %} align-self-start">{{ note.get_status_display }}</span>
+</div>
+<div class="row g-3 mb-3 border-bottom pb-3">
+<div class="col-md-4"><div class="text-muted small">Patient</div><div class="fw-semibold">{{ note.patient.get_full_name }}</div></div>
+<div class="col-md-4"><div class="text-muted small">Date & Time</div><div class="fw-semibold">{{ note.operation_date|date:"F d, Y H:i" }}</div></div>
+<div class="col-md-4"><div class="text-muted small">Duration</div><div class="fw-semibold">{{ note.duration_minutes|default:"N/A" }} minutes</div></div>
+<div class="col-md-4"><div class="text-muted small">Surgeon</div><div class="fw-semibold">Dr. {{ note.surgeon.user.get_full_name }}</div></div>
+<div class="col-md-4"><div class="text-muted small">Assistant Surgeon</div><div>{{ note.assistant_surgeon|default:"-" }}</div></div>
+<div class="col-md-4"><div class="text-muted small">Anesthetist</div><div>{{ note.anesthetist|default:"-" }}</div></div>
+<div class="col-md-4"><div class="text-muted small">Anesthesia Type</div><div>{{ note.anesthesia_type|default:"-" }}</div></div>
+<div class="col-md-4"><div class="text-muted small">Scrub Nurse</div><div>{{ note.scrub_nurse|default:"-" }}</div></div>
+<div class="col-md-4"><div class="text-muted small">Circulating Nurse</div><div>{{ note.circulating_nurse|default:"-" }}</div></div>
+</div>
+{% for label, value in procedure_fields %}{% if value %}<div class="mb-3"><div class="text-muted small fw-semibold text-uppercase">{{ label }}</div><div class="mt-1">{{ value }}</div></div>{% endif %}{% endfor %}
+<div class="mb-3"><div class="text-muted small fw-semibold text-uppercase">Procedure</div><div class="mt-1">{{ note.procedure_name }}</div></div>
+<div class="row g-2 mb-3">
+<div class="col-md-6"><div class="text-muted small fw-semibold text-uppercase">Pre-op Diagnosis</div><div>{{ note.pre_op_diagnosis }}</div></div>
+<div class="col-md-6"><div class="text-muted small fw-semibold text-uppercase">Post-op Diagnosis</div><div>{{ note.post_op_diagnosis|default:"-" }}</div></div>
+</div>
+{% if note.indication %}<div class="mb-3"><div class="text-muted small fw-semibold text-uppercase">Indication</div><div>{{ note.indication }}</div></div>{% endif %}
+{% if note.procedure_details %}<div class="mb-3"><div class="text-muted small fw-semibold text-uppercase">Procedure Details</div><div>{{ note.procedure_details }}</div></div>{% endif %}
+{% if note.findings %}<div class="mb-3"><div class="text-muted small fw-semibold text-uppercase">Findings</div><div>{{ note.findings }}</div></div>{% endif %}
+{% if note.complications %}<div class="mb-3"><div class="text-muted small fw-semibold text-uppercase">Complications</div><div class="text-danger">{{ note.complications }}</div></div>{% endif %}
+<div class="row g-2 mb-3">
+{% if note.blood_loss %}<div class="col-md-4"><div class="text-muted small fw-semibold text-uppercase">Blood Loss</div><div>{{ note.blood_loss }}</div></div>{% endif %}
+{% if note.specimens_sent %}<div class="col-md-8"><div class="text-muted small fw-semibold text-uppercase">Specimens Sent</div><div>{{ note.specimens_sent }}</div></div>{% endif %}
+</div>
+{% if note.post_op_instructions %}<div class="mb-3"><div class="text-muted small fw-semibold text-uppercase">Post-op Instructions</div><div>{{ note.post_op_instructions }}</div></div>{% endif %}
+<div class="mt-4 pt-3 border-top text-muted small">Recorded by {{ note.created_by.get_full_name }} on {{ note.created_at|date:"M d, Y H:i" }}</div>
+</div>
+</div>
+<style>@media print{.sidebar,.topbar,.btn{display:none!important}.main-wrapper{margin-left:0!important}}</style>
+{% endblock %}

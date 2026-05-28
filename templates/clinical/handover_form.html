@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% block title %}New Handover{% endblock %}
+{% block page_title %}Patient Handover{% endblock %}
+{% block content %}
+<div class="card">
+<div class="card-header py-3 px-4"><i class="fas fa-exchange-alt me-2 text-primary"></i>Handover Record</div>
+<div class="card-body p-4">
+<form method="post">{% csrf_token %}
+<div class="row g-3 mb-4">
+<div class="col-md-6"><label class="form-label fw-semibold">Patient *</label>
+<select name="patient" class="form-select" required>
+<option value="">-- Select --</option>
+{% for p in patients %}<option value="{{ p.pk }}" {% if patient and patient.pk == p.pk %}selected{% endif %}>{{ p.get_full_name }}</option>{% endfor %}
+</select></div>
+{% if admissions %}<div class="col-md-6"><label class="form-label fw-semibold">Admission</label>
+<select name="admission" class="form-select">
+<option value="">-- Optional --</option>
+{% for adm in admissions %}<option value="{{ adm.pk }}">{{ adm.admission_number }} – Room {{ adm.room_number }}</option>{% endfor %}
+</select></div>{% endif %}
+<div class="col-md-6"><label class="form-label fw-semibold">Handover To (Nurse) *</label>
+<select name="handover_to" class="form-select" required>
+<option value="">-- Select Nurse --</option>
+{% for n in nurses %}<option value="{{ n.pk }}">{{ n.get_full_name }}</option>{% endfor %}
+</select></div>
+<div class="col-md-6"><label class="form-label fw-semibold">Shift *</label>
+<select name="shift" class="form-select" required>
+{% for val, label in shift_choices %}<option value="{{ val }}">{{ label }}</option>{% endfor %}
+</select></div>
+</div>
+<h6 class="fw-bold border-bottom pb-2 mb-3">Current Status</h6>
+<div class="mb-3"><label class="form-label fw-semibold">Current Condition *</label><textarea name="current_condition" class="form-control" rows="3" required placeholder="Overall patient condition, consciousness level, symptoms..."></textarea></div>
+<h6 class="fw-bold border-bottom pb-2 mb-3">Vital Signs</h6>
+<div class="row g-3 mb-4">
+<div class="col-md-3"><label class="form-label small fw-semibold">Blood Pressure</label><input type="text" name="blood_pressure" class="form-control"></div>
+<div class="col-md-2"><label class="form-label small fw-semibold">Temp (°C)</label><input type="text" name="temperature" class="form-control"></div>
+<div class="col-md-2"><label class="form-label small fw-semibold">Pulse</label><input type="text" name="pulse" class="form-control"></div>
+<div class="col-md-2"><label class="form-label small fw-semibold">O2 Sat (%)</label><input type="text" name="oxygen_saturation" class="form-control"></div>
+</div>
+<div class="row g-3">
+<div class="col-md-6"><label class="form-label fw-semibold">Active Issues</label><textarea name="active_issues" class="form-control" rows="3"></textarea></div>
+<div class="col-md-6"><label class="form-label fw-semibold">Pending Tasks</label><textarea name="pending_tasks" class="form-control" rows="3"></textarea></div>
+<div class="col-md-6"><label class="form-label fw-semibold">Medications Due</label><textarea name="medications_due" class="form-control" rows="3"></textarea></div>
+<div class="col-md-6"><label class="form-label fw-semibold">Special Instructions</label><textarea name="special_instructions" class="form-control" rows="3"></textarea></div>
+</div>
+<div class="mt-3">
+<button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>Save Handover</button>
+<a href="{% url 'handover_list' %}" class="btn btn-outline-secondary ms-2">Cancel</a>
+</div>
+</form>
+</div>
+</div>
+{% endblock %}

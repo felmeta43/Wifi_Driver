@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block title %}Register OPD Visit{% endblock %}
+{% block page_title %}Register OPD Visit{% endblock %}
+{% block content %}
+<div class="card">
+<div class="card-header py-3 px-4"><i class="fas fa-door-open me-2 text-primary"></i>New OPD Visit</div>
+<div class="card-body p-4">
+<form method="post">{% csrf_token %}
+<div class="row g-3 mb-4">
+<div class="col-md-6"><label class="form-label fw-semibold">Patient *</label>
+<select name="patient" class="form-select" required>
+<option value="">-- Select Patient --</option>
+{% for p in patients %}<option value="{{ p.pk }}">{{ p.get_full_name }} ({{ p.patient_id }})</option>{% endfor %}
+</select></div>
+<div class="col-md-6"><label class="form-label fw-semibold">Doctor</label>
+<select name="doctor" class="form-select">
+<option value="">-- Assign Later --</option>
+{% for d in doctors %}<option value="{{ d.pk }}">Dr. {{ d.user.get_full_name }} – {{ d.specialization }}</option>{% endfor %}
+</select></div>
+<div class="col-md-6"><label class="form-label fw-semibold">Triage Level *</label>
+<select name="triage_level" class="form-select" required>
+{% for val, label in triage_choices %}<option value="{{ val }}">{{ label }}</option>{% endfor %}
+</select></div>
+<div class="col-12"><label class="form-label fw-semibold">Chief Complaint *</label><textarea name="chief_complaint" class="form-control" rows="2" required></textarea></div>
+</div>
+<h6 class="fw-bold border-bottom pb-2 mb-3">Vital Signs (Triage)</h6>
+<div class="row g-3 mb-4">
+<div class="col-md-3"><label class="form-label small fw-semibold">Blood Pressure</label><input type="text" name="blood_pressure" class="form-control" placeholder="120/80"></div>
+<div class="col-md-2"><label class="form-label small fw-semibold">Temp (°C)</label><input type="text" name="temperature" class="form-control"></div>
+<div class="col-md-2"><label class="form-label small fw-semibold">Pulse (bpm)</label><input type="text" name="pulse" class="form-control"></div>
+<div class="col-md-2"><label class="form-label small fw-semibold">O2 Sat (%)</label><input type="text" name="oxygen_saturation" class="form-control"></div>
+<div class="col-md-2"><label class="form-label small fw-semibold">Weight (kg)</label><input type="text" name="weight" class="form-control"></div>
+<div class="col-md-2"><label class="form-label small fw-semibold">RR (/min)</label><input type="text" name="respiratory_rate" class="form-control"></div>
+</div>
+<div class="mb-3"><label class="form-label fw-semibold">Notes</label><textarea name="notes" class="form-control" rows="2"></textarea></div>
+<button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>Register Visit</button>
+<a href="{% url 'opd_list' %}" class="btn btn-outline-secondary ms-2">Cancel</a>
+</form>
+</div>
+</div>
+{% endblock %}

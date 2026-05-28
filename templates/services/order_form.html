@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block title %}New Service Order{% endblock %}
+{% block page_title %}New Service Order{% endblock %}
+{% block content %}
+<div class="card">
+<div class="card-header py-3 px-4">Create Service Order</div>
+<div class="card-body p-4">
+<form method="post">{% csrf_token %}
+<div class="row g-3 mb-4">
+<div class="col-md-6"><label class="form-label fw-semibold">Patient *</label>
+<select name="patient" class="form-select" required>
+<option value="">-- Select --</option>
+{% for p in patients %}<option value="{{ p.pk }}">{{ p.get_full_name }} ({{ p.patient_id }})</option>{% endfor %}
+</select></div>
+<div class="col-md-6"><label class="form-label fw-semibold">Doctor</label>
+<select name="doctor" class="form-select">
+<option value="">-- Optional --</option>
+{% for d in doctors %}<option value="{{ d.pk }}">Dr. {{ d.user.get_full_name }}</option>{% endfor %}
+</select></div>
+</div>
+<h6 class="fw-bold border-bottom pb-2 mb-3">Services</h6>
+<div id="svc-items">
+<div class="row g-2 mb-2 svc-row">
+<div class="col-md-7"><select name="service" class="form-select form-select-sm" required>
+<option value="">-- Select Service --</option>
+{% for s in services %}<option value="{{ s.pk }}" data-price="{{ s.price }}">{{ s.name }} ({{ hospital.currency_symbol }}{{ s.price }})</option>{% endfor %}
+</select></div>
+<div class="col-md-2"><input type="number" name="quantity" class="form-control form-control-sm" value="1" min="1"></div>
+<div class="col-md-3"><button type="button" class="btn btn-sm btn-outline-danger" onclick="this.closest('.svc-row').remove()"><i class="fas fa-trash"></i></button></div>
+</div>
+</div>
+<button type="button" class="btn btn-sm btn-outline-primary mb-3" onclick="addSvc()"><i class="fas fa-plus me-1"></i>Add Service</button>
+<div class="mb-3"><label class="form-label fw-semibold">Notes</label><textarea name="notes" class="form-control" rows="2"></textarea></div>
+<button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>Create Order</button>
+<a href="{% url 'service_order_list' %}" class="btn btn-outline-secondary ms-2">Cancel</a>
+</form>
+</div>
+</div>
+{% endblock %}
+{% block extra_js %}<script>
+function addSvc() {
+    const c = document.getElementById('svc-items');
+    const row = c.querySelector('.svc-row').cloneNode(true);
+    row.querySelector('select').selectedIndex = 0;
+    row.querySelector('input').value = '1';
+    c.appendChild(row);
+}
+</script>{% endblock %}

@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% block title %}Instant Service{% endblock %}
+{% block page_title %}Instant Service Counter{% endblock %}
+{% block content %}
+<div class="row g-3">
+<div class="col-md-5">
+<div class="card">
+<div class="card-header py-3 px-4"><i class="fas fa-bolt me-2 text-warning"></i>Quick Service</div>
+<div class="card-body p-4">
+<form method="post">{% csrf_token %}
+<div class="mb-3"><label class="form-label fw-semibold">Patient *</label>
+<select name="patient" class="form-select" required>
+<option value="">-- Select Patient --</option>
+{% for p in patients %}<option value="{{ p.pk }}">{{ p.get_full_name }} ({{ p.patient_id }})</option>{% endfor %}
+</select></div>
+<div class="mb-3"><label class="form-label fw-semibold">Service *</label>
+<select name="service" class="form-select" id="svc_select" required>
+<option value="">-- Select Service --</option>
+{% for s in services %}<option value="{{ s.pk }}" data-price="{{ s.price }}">{{ s.name }} – {{ hospital.currency_symbol }}{{ s.price }}</option>{% endfor %}
+</select></div>
+<div class="row g-2 mb-3">
+<div class="col-6"><label class="form-label fw-semibold">Quantity</label><input type="number" name="quantity" id="qty" class="form-control" value="1" min="1"></div>
+<div class="col-6"><label class="form-label fw-semibold">Total</label><input type="text" id="total_disp" class="form-control fw-bold text-success" readonly placeholder="{{ hospital.currency_symbol }}0.00"></div>
+</div>
+<div class="mb-3"><label class="form-label fw-semibold">Payment Method</label>
+<select name="payment_method" class="form-select">
+{% for val, label in payment_methods %}<option value="{{ val }}">{{ label }}</option>{% endfor %}
+</select></div>
+<div class="mb-3"><label class="form-label fw-semibold">Notes</label><textarea name="notes" class="form-control" rows="2"></textarea></div>
+<button type="submit" class="btn btn-warning text-white w-100 fw-semibold"><i class="fas fa-bolt me-1"></i>Issue Service</button>
+</form>
+</div>
+</div>
+</div>
+<div class="col-md-7">
+<div class="card">
+<div class="card-header py-3 px-4">Recent Instant Services</div>
+<div class="table-responsive">
+<table class="table table-hover mb-0 table-sm">
+<thead><tr><th class="ps-3">Receipt</th><th>Patient</th><th>Service</th><th>Total</th><th>Method</th></tr></thead>
+<tbody>
+{% for inst in recent %}
+<tr>
+<td class="ps-3 fw-semibold small">{{ inst.receipt_number }}</td>
+<td class="small">{{ inst.patient.get_full_name }}</td>
+<td class="small">{{ inst.service.name }}</td>
+<td class="fw-semibold text-success small">{{ hospital.currency_symbol }}{{ inst.total_price }}</td>
+<td class="small text-muted">{{ inst.payment_method }}</td>
+</tr>
+{% empty %}<tr><td colspan="5" class="text-center text-muted py-3">No records today.</td></tr>{% endfor %}
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</div>
+{% endblock %}
+{% block extra_js %}<script>
+const currency = '{{ hospital.currency_symbol }}';
+function updateTotal() {
+    const opt = document.getElementById('svc_select').selectedOptions[0];
+    const price = parseFloat(opt?.dataset.price || 0);
+    const qty = parseInt(document.getElementById('qty').value || 1);
+    document.getElementById('total_disp').value = currency + (price * qty).toFixed(2);
+}
+document.getElementById('svc_select').addEventListener('change', updateTotal);
+document.getElementById('qty').addEventListener('input', updateTotal);
+</script>{% endblock %}

@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block title %}Service Order {{ order.order_number }}{% endblock %}
+{% block page_title %}Service Order{% endblock %}
+{% block content %}
+<div class="row g-3">
+<div class="col-md-8">
+<div class="card">
+<div class="card-header py-3 px-4 d-flex justify-content-between">
+<span>{{ order.order_number }}</span>
+<span class="badge {% if order.status == 'completed' %}bg-success{% elif order.status == 'pending' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">{{ order.get_status_display }}</span>
+</div>
+<div class="card-body p-4">
+<div class="row mb-3">
+<div class="col-md-6"><div class="text-muted small">Patient</div><div class="fw-semibold">{{ order.patient.get_full_name }}</div></div>
+<div class="col-md-6"><div class="text-muted small">Doctor</div><div class="fw-semibold">{% if order.doctor %}Dr. {{ order.doctor.user.get_full_name }}{% else %}-{% endif %}</div></div>
+</div>
+<table class="table table-bordered table-sm">
+<thead class="table-light"><tr><th>Service</th><th class="text-center">Qty</th><th class="text-end">Unit Price</th><th class="text-end">Total</th></tr></thead>
+<tbody>
+{% for item in items %}
+<tr>
+<td>{{ item.service.name }}</td>
+<td class="text-center">{{ item.quantity }}</td>
+<td class="text-end">{{ hospital.currency_symbol }}{{ item.unit_price }}</td>
+<td class="text-end fw-semibold">{{ hospital.currency_symbol }}{{ item.total_price }}</td>
+</tr>
+{% endfor %}
+</tbody>
+<tfoot><tr class="fw-bold table-light"><td colspan="3" class="text-end">Total</td><td class="text-end">{{ hospital.currency_symbol }}{{ order.get_total }}</td></tr></tfoot>
+</table>
+{% if order.notes %}<div class="alert alert-light">{{ order.notes }}</div>{% endif %}
+</div>
+</div>
+</div>
+<div class="col-md-4">
+{% if order.status != 'completed' %}
+<div class="card">
+<div class="card-body p-3">
+<form method="post" action="{% url 'service_order_complete' order.pk %}">{% csrf_token %}
+<button type="submit" class="btn btn-success w-100"><i class="fas fa-check me-1"></i>Mark Complete</button>
+</form>
+</div>
+</div>
+{% endif %}
+</div>
+</div>
+{% endblock %}

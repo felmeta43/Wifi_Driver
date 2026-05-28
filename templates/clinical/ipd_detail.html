@@ -1,0 +1,178 @@
+{% extends 'base.html' %}
+{% block title %}IPD {{ adm.admission_number }}{% endblock %}
+{% block page_title %}IPD Patient{% endblock %}
+{% block content %}
+<div class="row g-3">
+<div class="col-md-3">
+<div class="card mb-3">
+<div class="card-body p-3 text-center">
+<div style="width:60px;height:60px;border-radius:50%;background:#e8f4fd;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1.3rem;color:var(--primary);margin:0 auto 0.75rem;">{{ adm.patient.first_name|first }}{{ adm.patient.last_name|first }}</div>
+<div class="fw-bold">{{ adm.patient.get_full_name }}</div>
+<div class="text-muted small mb-1">{{ adm.admission_number }}</div>
+<span class="badge {% if adm.status == 'admitted' %}bg-success{% elif adm.status == 'discharged' %}bg-secondary{% else %}bg-warning text-dark{% endif %} mb-2">{{ adm.get_status_display }}</span>
+<div class="text-muted small">Room {{ adm.room_number }}, Bed {{ adm.bed_number }}</div>
+<div class="text-muted small">{{ adm.get_room_type_display }}</div>
+{% if adm.department %}<div class="text-muted small">{{ adm.department.name }}</div>{% endif %}
+<div class="text-muted small mt-1">LOS: {{ adm.get_los }} days</div>
+</div>
+</div>
+<div class="card mb-3">
+<div class="card-body p-3">
+<div class="mb-2"><div class="text-muted small">Admitting Doctor</div><div class="fw-semibold small">Dr. {{ adm.admitting_doctor.user.get_full_name }}</div></div>
+<div class="mb-2"><div class="text-muted small">Admitted</div><div class="fw-semibold small">{{ adm.admission_date|date:"M d, Y H:i" }}</div></div>
+{% if adm.attending_nurse %}<div class="mb-2"><div class="text-muted small">Nurse</div><div class="fw-semibold small">{{ adm.attending_nurse.get_full_name }}</div></div>{% endif %}
+{% if adm.expected_discharge %}<div class="mb-2"><div class="text-muted small">Exp. Discharge</div><div class="fw-semibold small">{{ adm.expected_discharge|date:"M d, Y" }}</div></div>{% endif %}
+<div><div class="text-muted small">Diagnosis</div><div class="small">{{ adm.admission_diagnosis }}</div></div>
+</div>
+</div>
+{% if adm.status == 'admitted' %}
+<div class="card">
+<div class="card-body p-2 d-flex flex-column gap-1">
+<a href="{% url 'clinical_note_create' adm.patient.pk %}?admission={{ adm.pk }}" class="btn btn-sm btn-primary w-100"><i class="fas fa-notes-medical me-1"></i>Add Note</a>
+<a href="{% url 'operation_note_create_patient' adm.patient.pk %}" class="btn btn-sm btn-outline-primary w-100"><i class="fas fa-scalpel-path me-1"></i>Op Note</a>
+<a href="{% url 'consultation_create_patient' adm.patient.pk %}" class="btn btn-sm btn-outline-secondary w-100"><i class="fas fa-comments-medical me-1"></i>Consultation</a>
+<a href="{% url 'handover_create_patient' adm.patient.pk %}" class="btn btn-sm btn-outline-info w-100"><i class="fas fa-exchange-alt me-1"></i>Handover</a>
+<a href="{% url 'medical_file_upload' adm.patient.pk %}" class="btn btn-sm btn-outline-success w-100"><i class="fas fa-file-upload me-1"></i>Upload File</a>
+<a href="{% url 'radiology_order_create' %}" class="btn btn-sm btn-outline-warning w-100"><i class="fas fa-x-ray me-1"></i>Radiology</a>
+<a href="{% url 'ipd_discharge' adm.pk %}" class="btn btn-sm btn-danger w-100 mt-2"><i class="fas fa-sign-out-alt me-1"></i>Discharge</a>
+</div>
+</div>
+{% endif %}
+</div>
+
+<div class="col-md-9">
+<ul class="nav nav-tabs mb-3" id="ipdTabs">
+<li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#notes">Clinical Notes</a></li>
+<li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#ops">Operations</a></li>
+<li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#consult">Consultations</a></li>
+<li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#handover">Handovers</a></li>
+<li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#radiology">Radiology</a></li>
+<li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#services">Services</a></li>
+<li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#files">Files</a></li>
+</ul>
+<div class="tab-content">
+
+<div class="tab-pane fade show active" id="notes">
+{% for note in clinical_notes %}
+<div class="card mb-2">
+<div class="card-body p-3">
+<div class="d-flex justify-content-between mb-1">
+<span class="badge bg-secondary small">{{ note.get_note_type_display }}</span>
+<span class="text-muted small">{{ note.created_at|date:"M d H:i" }} &bull; {{ note.written_by.get_full_name }}</span>
+</div>
+<div class="fw-semibold mb-1">{{ note.title }}</div>
+{% if note.note_type == 'soap' %}
+<div class="small">{% if note.subjective %}<b>S:</b> {{ note.subjective }}<br>{% endif %}{% if note.objective %}<b>O:</b> {{ note.objective }}<br>{% endif %}{% if note.assessment %}<b>A:</b> {{ note.assessment }}<br>{% endif %}{% if note.plan %}<b>P:</b> {{ note.plan }}{% endif %}</div>
+{% else %}<div class="small text-muted">{{ note.content|truncatechars:300 }}</div>{% endif %}
+{% if note.vital_signs %}<div class="mt-1">{% for k,v in note.vital_signs.items %}<span class="badge bg-light text-dark me-1">{{ k|title }}: {{ v }}</span>{% endfor %}</div>{% endif %}
+</div>
+</div>
+{% empty %}<p class="text-muted text-center py-4">No clinical notes.</p>{% endfor %}
+</div>
+
+<div class="tab-pane fade" id="ops">
+{% for op in op_notes %}
+<div class="card mb-2">
+<div class="card-body p-3">
+<div class="d-flex justify-content-between mb-1">
+<div class="fw-bold">{{ op.procedure_name }}</div>
+<span class="badge {% if op.status == 'completed' %}bg-success{% else %}bg-warning text-dark{% endif %}">{{ op.get_status_display }}</span>
+</div>
+<div class="text-muted small">{{ op.operation_date|date:"M d, Y H:i" }} &bull; Surgeon: Dr. {{ op.surgeon.user.get_full_name }}</div>
+<a href="{% url 'operation_note_detail' op.pk %}" class="btn btn-sm btn-outline-primary mt-2">View Full Note</a>
+</div>
+</div>
+{% empty %}<p class="text-muted text-center py-4">No operation notes.</p>{% endfor %}
+</div>
+
+<div class="tab-pane fade" id="consult">
+{% for c in consultations %}
+<div class="card mb-2">
+<div class="card-body p-3">
+<div class="d-flex justify-content-between mb-1">
+<div class="fw-bold">{{ c.request_number }}</div>
+<span class="badge {% if c.status == 'completed' %}bg-success{% elif c.status == 'pending' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">{{ c.get_status_display }}</span>
+</div>
+<div class="small"><b>Requesting:</b> Dr. {{ c.requesting_doctor.user.get_full_name }} → <b>Consulting:</b> Dr. {{ c.consulting_doctor.user.get_full_name }}</div>
+<div class="text-muted small">{{ c.get_priority_display }} &bull; {{ c.requested_at|date:"M d H:i" }}</div>
+<div class="small mt-1">{{ c.reason|truncatechars:150 }}</div>
+{% if c.response %}<div class="alert alert-light mt-2 p-2 small"><b>Response:</b> {{ c.response }}</div>{% endif %}
+</div>
+</div>
+{% empty %}<p class="text-muted text-center py-4">No consultations.</p>{% endfor %}
+</div>
+
+<div class="tab-pane fade" id="handover">
+{% for h in handovers %}
+<div class="card mb-2">
+<div class="card-body p-3">
+<div class="d-flex justify-content-between mb-1">
+<div class="fw-semibold">{{ h.get_shift_display }}</div>
+<span class="text-muted small">{{ h.handover_date|date:"M d" }}</span>
+</div>
+<div class="small"><b>From:</b> {{ h.handover_from.get_full_name }} → <b>To:</b> {{ h.handover_to.get_full_name }}</div>
+<div class="small text-muted">{{ h.current_condition|truncatechars:150 }}</div>
+{% if h.pending_tasks %}<div class="small mt-1"><b>Pending:</b> {{ h.pending_tasks }}</div>{% endif %}
+{% if h.vital_signs %}<div class="mt-1">{% for k,v in h.vital_signs.items %}<span class="badge bg-light text-dark me-1 small">{{ k|title }}: {{ v }}</span>{% endfor %}</div>{% endif %}
+</div>
+</div>
+{% empty %}<p class="text-muted text-center py-4">No handover records.</p>{% endfor %}
+</div>
+
+<div class="tab-pane fade" id="radiology">
+{% for rad in radiology %}
+<div class="card mb-2">
+<div class="card-body p-3">
+<div class="d-flex justify-content-between">
+<div class="fw-semibold">{{ rad.get_modality_display }} – {{ rad.body_part }}</div>
+<span class="badge {% if rad.status == 'reported' %}bg-success{% else %}bg-warning text-dark{% endif %}">{{ rad.get_status_display }}</span>
+</div>
+<div class="text-muted small">{{ rad.order_number }} &bull; {{ rad.ordered_at|date:"M d H:i" }}</div>
+{% if rad.result %}
+<div class="small mt-1"><b>Impression:</b> {{ rad.result.impression|truncatechars:150 }}</div>
+{% if rad.result.image %}<a href="{{ rad.result.image.url }}" target="_blank" class="btn btn-sm btn-outline-primary mt-1">View Image</a>{% endif %}
+{% else %}
+<a href="{% url 'radiology_report' rad.pk %}" class="btn btn-sm btn-outline-success mt-1">Add Report</a>{% endif %}
+</div>
+</div>
+{% empty %}<p class="text-muted text-center py-4">No radiology orders.</p>{% endfor %}
+</div>
+
+<div class="tab-pane fade" id="services">
+{% for so in service_orders %}
+<div class="card mb-2">
+<div class="card-body p-3">
+<div class="d-flex justify-content-between">
+<a href="{% url 'service_order_detail' so.pk %}" class="fw-semibold text-decoration-none">{{ so.order_number }}</a>
+<span class="badge {% if so.status == 'completed' %}bg-success{% else %}bg-warning text-dark{% endif %}">{{ so.get_status_display }}</span>
+</div>
+<div class="small text-muted">{{ so.items.count }} item(s) &bull; Total: {{ hospital.currency_symbol }}{{ so.get_total }}</div>
+</div>
+</div>
+{% empty %}<p class="text-muted text-center py-4">No service orders.</p>{% endfor %}
+</div>
+
+<div class="tab-pane fade" id="files">
+<div class="d-flex justify-content-end mb-2">
+<a href="{% url 'medical_file_upload' adm.patient.pk %}" class="btn btn-sm btn-primary"><i class="fas fa-upload me-1"></i>Upload File</a>
+</div>
+{% for f in files %}
+<div class="card mb-2">
+<div class="card-body p-3 d-flex align-items-center gap-3">
+<div style="width:40px;height:40px;border-radius:10px;background:#e8f4fd;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+<i class="fas {% if f.file_type == 'xray' or f.file_type == 'image' %}fa-image{% elif f.file_type == 'ecg' %}fa-heartbeat{% else %}fa-file-alt{% endif %} text-primary"></i>
+</div>
+<div class="flex-fill">
+<div class="fw-semibold small">{{ f.title }}</div>
+<div class="text-muted small">{{ f.get_file_type_display }} &bull; {{ f.created_at|date:"M d, Y" }}</div>
+</div>
+<a href="{{ f.file.url }}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="fas fa-download"></i></a>
+</div>
+</div>
+{% empty %}<p class="text-muted text-center py-4">No files uploaded.</p>{% endfor %}
+</div>
+
+</div>
+</div>
+</div>
+{% endblock %}

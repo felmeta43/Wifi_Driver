@@ -1,0 +1,146 @@
+{% extends 'base.html' %}
+{% block title %}Radiology Report{% endblock %}
+{% block page_title %}Radiology Report{% endblock %}
+{% block content %}
+<div class="row g-4">
+  <!-- Order Info -->
+  <div class="col-lg-4">
+    <div class="card mb-3">
+      <div class="card-header"><i class="fas fa-info-circle me-2 text-primary"></i>Order Details</div>
+      <div class="card-body">
+        <table class="table table-sm table-borderless mb-0">
+          <tr><th class="text-muted" style="width:45%">Order #</th><td class="fw-semibold text-primary">{{ order.order_number }}</td></tr>
+          <tr><th class="text-muted">Patient</th><td>{{ order.patient.get_full_name }}</td></tr>
+          <tr><th class="text-muted">ID</th><td>{{ order.patient.patient_id }}</td></tr>
+          <tr><th class="text-muted">Modality</th><td><span class="badge bg-primary">{{ order.get_modality_display }}</span></td></tr>
+          <tr><th class="text-muted">Body Part</th><td>{{ order.body_part }}</td></tr>
+          <tr><th class="text-muted">Priority</th>
+            <td>{% if order.priority == 'emergency' %}<span class="badge bg-danger">Emergency</span>
+            {% elif order.priority == 'urgent' %}<span class="badge bg-warning text-dark">Urgent</span>
+            {% else %}<span class="badge bg-secondary">Routine</span>{% endif %}</td>
+          </tr>
+          <tr><th class="text-muted">Ordered</th><td class="small">{{ order.ordered_at|date:"d M Y H:i" }}</td></tr>
+          {% if order.requesting_doctor %}<tr><th class="text-muted">Requested by</th><td>Dr. {{ order.requesting_doctor.user.get_full_name }}</td></tr>{% endif %}
+          <tr><th class="text-muted">Indication</th><td class="small">{{ order.clinical_indication }}</td></tr>
+        </table>
+      </div>
+    </div>
+
+    {% if images %}
+    <div class="card">
+      <div class="card-header"><i class="fas fa-images me-2 text-success"></i>Uploaded Images ({{ images|length }})</div>
+      <div class="card-body p-2">
+        <div class="row g-2">
+          {% for img in images %}
+          <div class="col-6">
+            <a href="{{ img.image.url }}" target="_blank">
+              <img src="{{ img.image.url }}" alt="{{ img.caption }}" class="img-fluid rounded" style="height:90px;object-fit:cover;width:100%;">
+            </a>
+            {% if img.caption %}<div class="text-muted small text-center">{{ img.caption }}</div>{% endif %}
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Report Form -->
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-header d-flex align-items-center justify-content-between">
+        <div class="d-flex align-items-center gap-2">
+          <i class="fas fa-file-medical text-success"></i>
+          <span>{% if existing %}Update{% else %}Write{% endif %} Radiology Report</span>
+        </div>
+        {% if existing and existing.reported_by %}
+        <small class="text-muted">Reported by {{ existing.reported_by.get_full_name }}</small>
+        {% endif %}
+      </div>
+      <div class="card-body p-4">
+        <form method="post" enctype="multipart/form-data">
+          {% csrf_token %}
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Findings <span class="text-danger">*</span></label>
+            <textarea name="findings" class="form-control" rows="6"
+              placeholder="Describe what is seen in the study. Include relevant positive and negative findings..."
+              required>{{ existing.findings|default:'' }}</textarea>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Impression <span class="text-danger">*</span></label>
+            <textarea name="impression" class="form-control" rows="4"
+              placeholder="Summary / diagnostic conclusion..."
+              required>{{ existing.impression|default:'' }}</textarea>
+          </div>
+          <div class="mb-4">
+            <label class="form-label fw-semibold">Recommendations</label>
+            <textarea name="recommendations" class="form-control" rows="2"
+              placeholder="Follow-up imaging, clinical correlation, etc.">{{ existing.recommendations|default:'' }}</textarea>
+          </div>
+
+          <!-- Image Upload -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Primary Image (DICOM/JPG/PNG)</label>
+            {% if existing and existing.image %}
+            <div class="mb-2">
+              <a href="{{ existing.image.url }}" target="_blank">
+                <img src="{{ existing.image.url }}" alt="Current" style="max-height:120px;border-radius:8px;border:1px solid #eee;">
+              </a>
+              <div class="form-text">Current image — upload new to replace.</div>
+            </div>
+            {% endif %}
+            <input type="file" name="image" class="form-control" accept="image/*,.dcm" id="primaryImage">
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label fw-semibold">Additional Images</label>
+            <input type="file" name="additional_images" class="form-control" accept="image/*" multiple id="additionalImages">
+            <div class="form-text">Hold Ctrl/Cmd to select multiple files.</div>
+            <div id="additionalPreview" class="row g-2 mt-1"></div>
+          </div>
+
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-success px-4">
+              <i class="fas fa-save me-2"></i>{% if existing %}Update{% else %}Submit{% endif %} Report
+            </button>
+            <a href="{% url 'radiology_order_list' %}" class="btn btn-outline-secondary">Cancel</a>
+            {% if existing %}
+            <button type="button" class="btn btn-outline-primary ms-auto" onclick="window.print()">
+              <i class="fas fa-print me-1"></i>Print
+            </button>
+            {% endif %}
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+document.getElementById('additionalImages').addEventListener('change', function(e) {
+  const preview = document.getElementById('additionalPreview');
+  preview.innerHTML = '';
+  Array.from(e.target.files).forEach(f => {
+    if (!f.type.startsWith('image/')) return;
+    const col = document.createElement('div');
+    col.className = 'col-3';
+    const img = document.createElement('img');
+    img.src = URL.createObjectURL(f);
+    img.className = 'img-fluid rounded';
+    img.style.cssText = 'height:80px;object-fit:cover;width:100%;border:1px solid #eee;';
+    col.appendChild(img);
+    preview.appendChild(col);
+  });
+});
+</script>
+{% endblock %}
+{% block extra_css %}
+<style>
+@media print {
+  .sidebar, .topbar, .btn, form { display: none !important; }
+  .main-wrapper { margin-left: 0 !important; }
+  .card { box-shadow: none !important; border: 1px solid #dee2e6 !important; }
+}
+</style>
+{% endblock %}

@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% block title %}Operation Note{% endblock %}
+{% block page_title %}Create Operation Note{% endblock %}
+{% block content %}
+<div class="card">
+<div class="card-header py-3 px-4"><i class="fas fa-scalpel-path me-2 text-primary"></i>Operation / Procedure Note</div>
+<div class="card-body p-4">
+<form method="post">{% csrf_token %}
+<div class="row g-3 mb-4">
+<div class="col-md-6"><label class="form-label fw-semibold">Patient *</label>
+<select name="patient" class="form-select" required>
+<option value="">-- Select --</option>
+{% for p in patients %}<option value="{{ p.pk }}" {% if patient and patient.pk == p.pk %}selected{% endif %}>{{ p.get_full_name }} ({{ p.patient_id }})</option>{% endfor %}
+</select></div>
+{% if admissions %}<div class="col-md-6"><label class="form-label fw-semibold">IPD Admission</label>
+<select name="admission" class="form-select">
+<option value="">-- Optional --</option>
+{% for adm in admissions %}<option value="{{ adm.pk }}">{{ adm.admission_number }}</option>{% endfor %}
+</select></div>{% endif %}
+<div class="col-md-8"><label class="form-label fw-semibold">Procedure Name *</label><input type="text" name="procedure_name" class="form-control" required></div>
+<div class="col-md-4"><label class="form-label fw-semibold">Status</label>
+<select name="status" class="form-select">
+{% for val, label in status_choices %}<option value="{{ val }}" {% if val == 'completed' %}selected{% endif %}>{{ label }}</option>{% endfor %}
+</select></div>
+<div class="col-md-6"><label class="form-label fw-semibold">Operation Date & Time *</label><input type="datetime-local" name="operation_date" class="form-control" required></div>
+<div class="col-md-3"><label class="form-label fw-semibold">Duration (minutes)</label><input type="number" name="duration_minutes" class="form-control"></div>
+</div>
+<h6 class="fw-bold border-bottom pb-2 mb-3">Surgical Team</h6>
+<div class="row g-3 mb-4">
+<div class="col-md-6"><label class="form-label fw-semibold">Surgeon *</label>
+<select name="surgeon" class="form-select" required>
+<option value="">-- Select Surgeon --</option>
+{% for d in doctors %}<option value="{{ d.pk }}">Dr. {{ d.user.get_full_name }}</option>{% endfor %}
+</select></div>
+<div class="col-md-6"><label class="form-label fw-semibold">Assistant Surgeon</label><input type="text" name="assistant_surgeon" class="form-control"></div>
+<div class="col-md-4"><label class="form-label fw-semibold">Anesthetist</label><input type="text" name="anesthetist" class="form-control"></div>
+<div class="col-md-4"><label class="form-label fw-semibold">Anesthesia Type</label><input type="text" name="anesthesia_type" class="form-control" placeholder="General / Spinal / Local"></div>
+<div class="col-md-4"><label class="form-label fw-semibold">Scrub Nurse</label><input type="text" name="scrub_nurse" class="form-control"></div>
+<div class="col-md-4"><label class="form-label fw-semibold">Circulating Nurse</label><input type="text" name="circulating_nurse" class="form-control"></div>
+</div>
+<h6 class="fw-bold border-bottom pb-2 mb-3">Operative Details</h6>
+<div class="row g-3 mb-4">
+<div class="col-md-6"><label class="form-label fw-semibold">Pre-op Diagnosis *</label><textarea name="pre_op_diagnosis" class="form-control" rows="2" required></textarea></div>
+<div class="col-md-6"><label class="form-label fw-semibold">Post-op Diagnosis</label><textarea name="post_op_diagnosis" class="form-control" rows="2"></textarea></div>
+<div class="col-12"><label class="form-label fw-semibold">Indication</label><textarea name="indication" class="form-control" rows="2"></textarea></div>
+<div class="col-12"><label class="form-label fw-semibold">Procedure Details</label><textarea name="procedure_details" class="form-control" rows="4" placeholder="Detailed description of the procedure..."></textarea></div>
+<div class="col-md-6"><label class="form-label fw-semibold">Intraoperative Findings</label><textarea name="findings" class="form-control" rows="3"></textarea></div>
+<div class="col-md-6"><label class="form-label fw-semibold">Complications</label><textarea name="complications" class="form-control" rows="3"></textarea></div>
+<div class="col-md-3"><label class="form-label fw-semibold">Blood Loss (mL)</label><input type="text" name="blood_loss" class="form-control"></div>
+<div class="col-md-9"><label class="form-label fw-semibold">Specimens Sent</label><input type="text" name="specimens_sent" class="form-control"></div>
+<div class="col-md-6"><label class="form-label fw-semibold">Drains</label><input type="text" name="drains" class="form-control"></div>
+<div class="col-md-6"><label class="form-label fw-semibold">Closure</label><input type="text" name="closure" class="form-control"></div>
+<div class="col-12"><label class="form-label fw-semibold">Post-op Instructions</label><textarea name="post_op_instructions" class="form-control" rows="3"></textarea></div>
+</div>
+<button type="submit" class="btn btn-primary px-4"><i class="fas fa-save me-1"></i>Save Operation Note</button>
+<a href="{% url 'operation_note_list' %}" class="btn btn-outline-secondary ms-2">Cancel</a>
+</form>
+</div>
+</div>
+{% endblock %}

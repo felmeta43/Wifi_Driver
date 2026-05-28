@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block title %}Discharge Patient{% endblock %}
+{% block page_title %}Patient Discharge{% endblock %}
+{% block content %}
+<div class="card">
+<div class="card-header py-3 px-4 d-flex justify-content-between">
+<span><i class="fas fa-sign-out-alt me-2 text-danger"></i>Discharge: {{ adm.patient.get_full_name }}</span>
+<span class="text-muted small">Admitted: {{ adm.admission_date|date:"M d, Y" }} &bull; LOS: {{ adm.get_los }} days</span>
+</div>
+<div class="card-body p-4">
+<form method="post">{% csrf_token %}
+<div class="row g-3">
+<div class="col-md-6"><label class="form-label fw-semibold">Discharge Condition</label><input type="text" name="discharge_condition" class="form-control" placeholder="e.g. Improved, Stable, Critical"></div>
+<div class="col-12"><label class="form-label fw-semibold">Discharge Diagnosis *</label><textarea name="discharge_diagnosis" class="form-control" rows="2" required></textarea></div>
+<div class="col-12"><label class="form-label fw-semibold">Treatment Summary *</label><textarea name="treatment_summary" class="form-control" rows="4" required placeholder="Summary of treatment provided during admission..."></textarea></div>
+<div class="col-12"><label class="form-label fw-semibold">Discharge Instructions</label><textarea name="discharge_instructions" class="form-control" rows="3" placeholder="Instructions for patient on discharge..."></textarea></div>
+<div class="col-md-6"><label class="form-label fw-semibold">Follow-up Date</label><input type="date" name="follow_up_date" class="form-control"></div>
+<div class="col-md-6"><label class="form-label fw-semibold">Follow-up Doctor</label>
+<select name="follow_up_doctor" class="form-select">
+<option value="">-- Select --</option>
+{% for d in doctors %}<option value="{{ d.pk }}">Dr. {{ d.user.get_full_name }}</option>{% endfor %}
+</select></div>
+<div class="col-md-6"><label class="form-label fw-semibold">Diet Instructions</label><textarea name="diet_instructions" class="form-control" rows="2"></textarea></div>
+<div class="col-md-6"><label class="form-label fw-semibold">Activity Restrictions</label><textarea name="activity_restrictions" class="form-control" rows="2"></textarea></div>
+<div class="col-12"><label class="form-label fw-semibold">Discharge Medications</label><textarea name="discharge_medications" class="form-control" rows="3" placeholder="List medications to continue at home..."></textarea></div>
+</div>
+<div class="alert alert-warning mt-3"><i class="fas fa-exclamation-triangle me-2"></i>This action will discharge the patient and cannot be undone.</div>
+<button type="submit" class="btn btn-danger px-4"><i class="fas fa-sign-out-alt me-1"></i>Confirm Discharge</button>
+<a href="{% url 'ipd_detail' adm.pk %}" class="btn btn-outline-secondary ms-2">Cancel</a>
+</form>
+</div>
+</div>
+{% endblock %}

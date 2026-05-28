@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block title %}Services{% endblock %}
+{% block page_title %}Service Management{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+<h5 class="mb-0 fw-semibold">Service Catalog</h5>
+<div class="d-flex gap-2">
+<a href="{% url 'service_category_list' %}" class="btn btn-outline-primary btn-sm">Categories</a>
+<a href="{% url 'service_order_list' %}" class="btn btn-outline-secondary btn-sm">Orders</a>
+<a href="{% url 'instant_service' %}" class="btn btn-warning btn-sm text-white"><i class="fas fa-bolt me-1"></i>Instant</a>
+<a href="{% url 'service_create' %}" class="btn btn-primary btn-sm"><i class="fas fa-plus me-1"></i>Add Service</a>
+</div>
+</div>
+<form method="get" class="row g-2 mb-3">
+<div class="col-md-4"><div class="search-box"><i class="fas fa-search text-muted"></i><input type="text" name="q" value="{{ query }}" placeholder="Search..."></div></div>
+<div class="col-md-3"><select name="type" class="form-select form-select-sm">
+<option value="">All Types</option>
+{% for val, label in type_choices %}<option value="{{ val }}" {% if stype == val %}selected{% endif %}>{{ label }}</option>{% endfor %}
+</select></div>
+<div class="col-md-2"><button type="submit" class="btn btn-primary btn-sm w-100">Filter</button></div>
+</form>
+<div class="card">
+<div class="table-responsive">
+<table class="table table-hover mb-0">
+<thead><tr><th class="ps-4">Code</th><th>Name</th><th>Category</th><th>Type</th><th>Price</th><th>Duration</th><th class="pe-4">Actions</th></tr></thead>
+<tbody>
+{% for svc in services %}
+<tr>
+<td class="ps-4 fw-semibold text-primary">{{ svc.code }}</td>
+<td><div class="fw-semibold">{{ svc.name }}</div><div class="text-muted small">{{ svc.department.name|default:"" }}</div></td>
+<td class="text-muted small">{{ svc.category.name|default:"-" }}</td>
+<td><span class="badge bg-light text-dark">{{ svc.get_service_type_display }}</span></td>
+<td class="fw-semibold">{{ hospital.currency_symbol }}{{ svc.price }}</td>
+<td class="text-muted small">{{ svc.duration_minutes }} min</td>
+<td class="pe-4">
+<a href="{% url 'service_edit' svc.pk %}" class="btn btn-sm btn-outline-primary"><i class="fas fa-edit"></i></a>
+</td>
+</tr>
+{% empty %}<tr><td colspan="7" class="text-center text-muted py-5">No services. <a href="{% url 'service_create' %}">Add one.</a></td></tr>{% endfor %}
+</tbody>
+</table>
+</div>
+</div>
+{% endblock %}

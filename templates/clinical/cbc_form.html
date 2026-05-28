@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+{% block title %}CBC Result Entry{% endblock %}
+{% block page_title %}CBC Machine Result{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+<div class="col-xl-10">
+<div class="card">
+  <div class="card-header d-flex align-items-center justify-content-between">
+    <div class="d-flex align-items-center gap-2">
+      <i class="fas fa-vials text-danger"></i>
+      <span>CBC Result — Order {{ order.order_number }}</span>
+    </div>
+    <span class="badge bg-secondary">{{ order.patient.get_full_name }}</span>
+  </div>
+  <div class="card-body p-4">
+    {% if existing %}
+    <div class="alert alert-warning"><i class="fas fa-exclamation-triangle me-2"></i>A CBC result already exists for this order. Submitting will create an additional record.</div>
+    {% endif %}
+    <form method="post">
+      {% csrf_token %}
+
+      <!-- Analyzer Info -->
+      <div class="row g-3 mb-4">
+        <div class="col-md-5">
+          <label class="form-label fw-semibold">Analyzer / Machine Name</label>
+          <input type="text" name="analyzer_name" class="form-control" placeholder="e.g. Sysmex XN-550" value="{{ existing.analyzer_name|default:'' }}">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label fw-semibold">Flags / Alerts</label>
+          <input type="text" name="flags" class="form-control" placeholder="e.g. High WBC, Anemia" value="{{ existing.flags|default:'' }}">
+        </div>
+      </div>
+
+      <!-- WBC Differential -->
+      <h6 class="fw-bold text-uppercase text-muted mb-3" style="font-size:.75rem;letter-spacing:.08em;"><i class="fas fa-circle text-danger me-2" style="font-size:.5rem;vertical-align:middle;"></i>White Blood Cell Count &amp; Differential</h6>
+      <div class="row g-3 mb-4">
+        <div class="col-md-3 col-6">
+          <label class="form-label small fw-semibold">WBC (×10³/μL)</label>
+          <input type="number" step="0.01" name="wbc" class="form-control" placeholder="4.5–11.0" value="{{ existing.wbc|default:'' }}">
+        </div>
+        <div class="col-md-3 col-6">
+          <label class="form-label small fw-semibold">Neutrophils (%)</label>
+          <input type="number" step="0.1" name="neutrophils_pct" class="form-control" placeholder="50–70" value="{{ existing.neutrophils_pct|default:'' }}">
+        </div>
+        <div class="col-md-3 col-6">
+          <label class="form-label small fw-semibold">Lymphocytes (%)</label>
+          <input type="number" step="0.1" name="lymphocytes_pct" class="form-control" placeholder="20–40" value="{{ existing.lymphocytes_pct|default:'' }}">
+        </div>
+        <div class="col-md-3 col-6">
+          <label class="form-label small fw-semibold">Monocytes (%)</label>
+          <input type="number" step="0.1" name="monocytes_pct" class="form-control" placeholder="2–8" value="{{ existing.monocytes_pct|default:'' }}">
+        </div>
+        <div class="col-md-3 col-6">
+          <label class="form-label small fw-semibold">Eosinophils (%)</label>
+          <input type="number" step="0.1" name="eosinophils_pct" class="form-control" placeholder="1–4" value="{{ existing.eosinophils_pct|default:'' }}">
+        </div>
+        <div class="col-md-3 col-6">
+          <label class="form-label small fw-semibold">Basophils (%)</label>
+          <input type="number" step="0.1" name="basophils_pct" class="form-control" placeholder="0–1" value="{{ existing.basophils_pct|default:'' }}">
+        </div>
+      </div>
+
+      <!-- RBC / Hemoglobin -->
+      <h6 class="fw-bold text-uppercase text-muted mb-3" style="font-size:.75rem;letter-spacing:.08em;"><i class="fas fa-circle text-danger me-2" style="font-size:.5rem;vertical-align:middle;"></i>Red Blood Cell Series</h6>
+      <div class="row g-3 mb-4">
+        <div class="col-md-3 col-6">
+          <label class="form-label small fw-semibold">RBC (×10⁶/μL)</label>
+          <input type="number" step="0.01" name="rbc" class="form-control" placeholder="4.5–5.5" value="{{ existing.rbc|default:'' }}">
+        </div>
+        <div class="col-md-3 col-6">
+          <label class="form-label small fw-semibold">Hemoglobin (g/dL)</label>
+          <input type="number" step="0.1" name="hemoglobin" class="form-control" placeholder="12–17.5" value="{{ existing.hemoglobin|default:'' }}">
+        </div>
+        <div class="col-md-3 col-6">
+          <label class="form-label small fw-semibold">Hematocrit (%)</label>
+          <input type="number" step="0.1" name="hematocrit" class="form-control" placeholder="37–52" value="{{ existing.hematocrit|default:'' }}">
+        </div>
+        <div class="col-md-3 col-6">
+          <label class="form-label small fw-semibold">MCV (fL)</label>
+          <input type="number" step="0.1" name="mcv" class="form-control" placeholder="80–100" value="{{ existing.mcv|default:'' }}">
+        </div>
+        <div class="col-md-3 col-6">
+          <label class="form-label small fw-semibold">MCH (pg)</label>
+          <input type="number" step="0.1" name="mch" class="form-control" placeholder="27–33" value="{{ existing.mch|default:'' }}">
+        </div>
+        <div class="col-md-3 col-6">
+          <label class="form-label small fw-semibold">MCHC (g/dL)</label>
+          <input type="number" step="0.1" name="mchc" class="form-control" placeholder="32–36" value="{{ existing.mchc|default:'' }}">
+        </div>
+        <div class="col-md-3 col-6">
+          <label class="form-label small fw-semibold">RDW (%)</label>
+          <input type="number" step="0.1" name="rdw" class="form-control" placeholder="11.5–14.5" value="{{ existing.rdw|default:'' }}">
+        </div>
+      </div>
+
+      <!-- Platelets -->
+      <h6 class="fw-bold text-uppercase text-muted mb-3" style="font-size:.75rem;letter-spacing:.08em;"><i class="fas fa-circle text-danger me-2" style="font-size:.5rem;vertical-align:middle;"></i>Platelets</h6>
+      <div class="row g-3 mb-4">
+        <div class="col-md-3 col-6">
+          <label class="form-label small fw-semibold">Platelets (×10³/μL)</label>
+          <input type="number" step="1" name="platelets" class="form-control" placeholder="150–400" value="{{ existing.platelets|default:'' }}">
+        </div>
+        <div class="col-md-3 col-6">
+          <label class="form-label small fw-semibold">MPV (fL)</label>
+          <input type="number" step="0.1" name="mpv" class="form-control" placeholder="7.5–12.5" value="{{ existing.mpv|default:'' }}">
+        </div>
+      </div>
+
+      <!-- Raw Output -->
+      <div class="mb-3">
+        <label class="form-label fw-semibold">Raw Machine Output <small class="text-muted">(paste CSV/HL7 output here)</small></label>
+        <textarea name="raw_output" class="form-control font-monospace" rows="4" style="font-size:.8rem;" placeholder="Paste raw machine output for archiving...">{{ existing.raw_output|default:'' }}</textarea>
+      </div>
+      <div class="mb-4">
+        <label class="form-label fw-semibold">Clinical Notes</label>
+        <textarea name="notes" class="form-control" rows="2" placeholder="Any interpretation notes...">{{ existing.notes|default:'' }}</textarea>
+      </div>
+
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary px-4"><i class="fas fa-save me-2"></i>Save CBC Result</button>
+        <a href="{% url 'lab_order_detail' order.pk %}" class="btn btn-outline-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+</div>
+</div>
+{% endblock %}

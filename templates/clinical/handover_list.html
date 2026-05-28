@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block title %}Handovers{% endblock %}
+{% block page_title %}Patient Handovers{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+<h5 class="mb-0 fw-semibold">Nurse-to-Nurse Handover</h5>
+<a href="{% url 'handover_create' %}" class="btn btn-primary btn-sm"><i class="fas fa-plus me-1"></i>New Handover</a>
+</div>
+<form method="get" class="row g-2 mb-3">
+<div class="col-md-3"><input type="date" name="date" class="form-control form-control-sm" value="{{ date_filter }}"></div>
+<div class="col-md-2"><button type="submit" class="btn btn-primary btn-sm w-100">Filter</button></div>
+</form>
+{% for h in handovers %}
+<div class="card mb-2">
+<div class="card-body p-3">
+<div class="row align-items-center">
+<div class="col-md-3">
+<div class="fw-bold">{{ h.patient.get_full_name }}</div>
+<div class="text-muted small">{{ h.handover_date|date:"M d" }} &bull; {{ h.handover_time|time:"H:i" }}</div>
+</div>
+<div class="col-md-2"><span class="badge bg-primary">{{ h.get_shift_display|truncatechars:15 }}</span></div>
+<div class="col-md-3"><i class="fas fa-arrow-right text-muted me-1"></i><span class="small">{{ h.handover_from.get_full_name }} → {{ h.handover_to.get_full_name }}</span></div>
+<div class="col-md-4"><div class="text-muted small">{{ h.current_condition|truncatechars:100 }}</div></div>
+</div>
+{% if h.pending_tasks or h.vital_signs %}
+<div class="mt-2 pt-2 border-top d-flex flex-wrap gap-2">
+{% if h.vital_signs %}{% for k,v in h.vital_signs.items %}<span class="badge bg-light text-dark small">{{ k|title }}: {{ v }}</span>{% endfor %}{% endif %}
+{% if h.pending_tasks %}<span class="badge bg-warning text-dark small"><i class="fas fa-tasks me-1"></i>{{ h.pending_tasks|truncatechars:40 }}</span>{% endif %}
+</div>
+{% endif %}
+</div>
+</div>
+{% empty %}
+<div class="text-center py-5">
+<i class="fas fa-exchange-alt fa-3x text-muted mb-3 d-block"></i>
+<h6 class="text-muted">No handover records for this date.</h6>
+<a href="{% url 'handover_create' %}" class="btn btn-primary btn-sm mt-2">Create Handover</a>
+</div>
+{% endfor %}
+{% endblock %}

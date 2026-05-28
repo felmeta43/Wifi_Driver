@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% block title %}Upload Medical File{% endblock %}
+{% block page_title %}Upload Medical File{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+<div class="col-lg-7">
+<div class="card">
+  <div class="card-header d-flex align-items-center gap-2">
+    <i class="fas fa-file-upload text-primary"></i>
+    <span>Upload File for {{ patient.get_full_name }}</span>
+  </div>
+  <div class="card-body p-4">
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div class="mb-3">
+        <label class="form-label fw-semibold">Patient</label>
+        <input type="text" class="form-control" value="{{ patient.get_full_name }} ({{ patient.patient_id }})" readonly>
+      </div>
+      <div class="mb-3">
+        <label class="form-label fw-semibold">Admission (optional)</label>
+        <select name="admission" class="form-select">
+          <option value="">— Outpatient / General —</option>
+          {% for adm in admissions %}
+          <option value="{{ adm.pk }}">{{ adm.admission_number }} – {{ adm.admission_date|date:"d M Y" }} ({{ adm.get_status_display }})</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">File Type <span class="text-danger">*</span></label>
+          <select name="file_type" class="form-select" required>
+            {% for val, label in file_types %}
+            <option value="{{ val }}">{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">Title <span class="text-danger">*</span></label>
+          <input type="text" name="title" class="form-control" placeholder="e.g. CBC Report 28 May 2026" required>
+        </div>
+      </div>
+      <div class="mb-3">
+        <label class="form-label fw-semibold">Description</label>
+        <textarea name="description" class="form-control" rows="2" placeholder="Optional notes about this file"></textarea>
+      </div>
+      <div class="mb-4">
+        <label class="form-label fw-semibold">File <span class="text-danger">*</span></label>
+        <input type="file" name="file" class="form-control" required id="fileInput">
+        <div class="form-text">Allowed: PDF, images (JPG, PNG), DOCX, etc. Max size as configured.</div>
+        <div id="filePreview" class="mt-2 d-none">
+          <img id="imgPreview" src="" alt="Preview" style="max-height:200px;border-radius:8px;border:1px solid #eee;" class="d-none">
+          <span id="fileMeta" class="text-muted small"></span>
+        </div>
+      </div>
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary px-4"><i class="fas fa-upload me-2"></i>Upload File</button>
+        <a href="{% url 'patient_detail' patient.pk %}" class="btn btn-outline-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+</div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+document.getElementById('fileInput').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const preview = document.getElementById('filePreview');
+  const img = document.getElementById('imgPreview');
+  const meta = document.getElementById('fileMeta');
+  preview.classList.remove('d-none');
+  meta.textContent = `${file.name} (${(file.size/1024).toFixed(1)} KB)`;
+  if (file.type.startsWith('image/')) {
+    img.classList.remove('d-none');
+    img.src = URL.createObjectURL(file);
+  } else {
+    img.classList.add('d-none');
+  }
+});
+</script>
+{% endblock %}

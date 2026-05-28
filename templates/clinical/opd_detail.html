@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% block title %}OPD {{ visit.visit_number }}{% endblock %}
+{% block page_title %}OPD Visit Detail{% endblock %}
+{% block content %}
+<div class="row g-3">
+<div class="col-md-4">
+<div class="card mb-3">
+<div class="card-body p-4">
+<h6 class="fw-bold">{{ visit.patient.get_full_name }}</h6>
+<div class="text-muted small mb-2">{{ visit.visit_number }} &bull; {{ visit.visit_date|date:"M d, Y" }}</div>
+<span class="badge {% if visit.status == 'completed' %}bg-success{% elif visit.status == 'with_doctor' %}bg-primary{% else %}bg-warning text-dark{% endif %} mb-3">{{ visit.get_status_display }}</span>
+<div class="mb-2"><div class="text-muted small">Triage</div><div class="fw-semibold">{{ visit.get_triage_level_display }}</div></div>
+<div class="mb-2"><div class="text-muted small">Complaint</div><div>{{ visit.chief_complaint }}</div></div>
+{% if visit.doctor %}<div class="mb-2"><div class="text-muted small">Doctor</div><div class="fw-semibold">Dr. {{ visit.doctor.user.get_full_name }}</div></div>{% endif %}
+{% if visit.vital_signs %}
+<div class="mt-3"><div class="text-muted small mb-1">Vital Signs</div>
+{% for k, v in visit.vital_signs.items %}<span class="badge bg-light text-dark me-1 mb-1">{{ k|title }}: {{ v }}</span>{% endfor %}
+</div>{% endif %}
+</div>
+</div>
+<div class="card">
+<div class="card-header py-3 px-4">Update Status</div>
+<div class="card-body p-3">
+<form method="post" action="{% url 'opd_status_update' visit.pk %}">{% csrf_token %}
+<select name="status" class="form-select form-select-sm mb-2">
+{% for val, label in visit.STATUS_CHOICES %}<option value="{{ val }}" {% if visit.status == val %}selected{% endif %}>{{ label }}</option>{% endfor %}
+</select>
+<input type="text" name="referred_to" class="form-control form-control-sm mb-2" placeholder="Referred to (if applicable)" value="{{ visit.referred_to }}">
+<button type="submit" class="btn btn-primary btn-sm w-100">Update</button>
+</form>
+</div>
+</div>
+</div>
+<div class="col-md-8">
+<div class="d-flex gap-2 mb-3 flex-wrap">
+<a href="{% url 'clinical_note_create' visit.patient.pk %}?opd={{ visit.pk }}" class="btn btn-sm btn-primary"><i class="fas fa-plus me-1"></i>Add Note</a>
+<a href="{% url 'appointment_create' %}" class="btn btn-sm btn-outline-primary"><i class="fas fa-calendar-plus me-1"></i>Book Appointment</a>
+<a href="{% url 'lab_order_create' %}" class="btn btn-sm btn-outline-info"><i class="fas fa-flask me-1"></i>Lab Order</a>
+<a href="{% url 'radiology_order_create' %}" class="btn btn-sm btn-outline-warning"><i class="fas fa-x-ray me-1"></i>Radiology</a>
+<a href="{% url 'prescription_create' %}" class="btn btn-sm btn-outline-success"><i class="fas fa-prescription me-1"></i>Prescription</a>
+</div>
+<div class="card">
+<div class="card-header py-3 px-4">Clinical Notes</div>
+{% for note in notes %}
+<div class="card-body border-bottom p-3">
+<div class="d-flex justify-content-between mb-1">
+<span class="badge bg-secondary">{{ note.get_note_type_display }}</span>
+<span class="text-muted small">{{ note.created_at|date:"M d H:i" }} &bull; {{ note.written_by.get_full_name }}</span>
+</div>
+<div class="fw-semibold small mb-1">{{ note.title }}</div>
+{% if note.note_type == 'soap' %}
+{% if note.subjective %}<div class="small"><span class="fw-bold">S:</span> {{ note.subjective }}</div>{% endif %}
+{% if note.objective %}<div class="small"><span class="fw-bold">O:</span> {{ note.objective }}</div>{% endif %}
+{% if note.assessment %}<div class="small"><span class="fw-bold">A:</span> {{ note.assessment }}</div>{% endif %}
+{% if note.plan %}<div class="small"><span class="fw-bold">P:</span> {{ note.plan }}</div>{% endif %}
+{% else %}<div class="small text-muted">{{ note.content|truncatechars:200 }}</div>{% endif %}
+</div>
+{% empty %}<div class="card-body text-center text-muted py-4">No notes yet.</div>{% endfor %}
+</div>
+</div>
+</div>
+{% endblock %}

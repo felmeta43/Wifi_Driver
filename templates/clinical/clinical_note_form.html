@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block title %}Add Clinical Note{% endblock %}
+{% block page_title %}Add Clinical Note{% endblock %}
+{% block content %}
+<div class="card">
+<div class="card-header py-3 px-4"><i class="fas fa-notes-medical me-2 text-primary"></i>Clinical Note for {{ patient.get_full_name }}</div>
+<div class="card-body p-4">
+<form method="post">{% csrf_token %}
+<div class="row g-3 mb-3">
+<div class="col-md-4"><label class="form-label fw-semibold">Note Type *</label>
+<select name="note_type" class="form-select" id="note_type" required>
+{% for val, label in note_types %}<option value="{{ val }}">{{ label }}</option>{% endfor %}
+</select></div>
+<div class="col-md-8"><label class="form-label fw-semibold">Title *</label><input type="text" name="title" class="form-control" required></div>
+{% if admissions %}
+<div class="col-md-6"><label class="form-label fw-semibold">Linked Admission</label>
+<select name="admission" class="form-select">
+<option value="">-- None --</option>
+{% for adm in admissions %}<option value="{{ adm.pk }}" {% if selected_adm == adm.pk|stringformat:'s' %}selected{% endif %}>{{ adm.admission_number }} (Room {{ adm.room_number }})</option>{% endfor %}
+</select></div>
+{% endif %}
+</div>
+<div id="soap-fields">
+<h6 class="fw-bold border-bottom pb-2 mb-3 mt-3">SOAP Note</h6>
+<div class="row g-3">
+<div class="col-md-6"><label class="form-label fw-semibold">S – Subjective</label><textarea name="subjective" class="form-control" rows="3" placeholder="What the patient reports..."></textarea></div>
+<div class="col-md-6"><label class="form-label fw-semibold">O – Objective</label><textarea name="objective" class="form-control" rows="3" placeholder="Exam findings, vitals, labs..."></textarea></div>
+<div class="col-md-6"><label class="form-label fw-semibold">A – Assessment</label><textarea name="assessment" class="form-control" rows="3" placeholder="Diagnosis, problem list..."></textarea></div>
+<div class="col-md-6"><label class="form-label fw-semibold">P – Plan</label><textarea name="plan" class="form-control" rows="3" placeholder="Treatment plan, orders..."></textarea></div>
+</div>
+</div>
+<div id="free-fields" style="display:none;">
+<div class="mt-3"><label class="form-label fw-semibold">Note Content *</label><textarea name="content" class="form-control" rows="6"></textarea></div>
+</div>
+<h6 class="fw-bold border-bottom pb-2 mb-3 mt-4">Vital Signs (optional)</h6>
+<div class="row g-3 mb-3">
+<div class="col-md-3"><label class="form-label small fw-semibold">Blood Pressure</label><input type="text" name="blood_pressure" class="form-control" placeholder="120/80"></div>
+<div class="col-md-2"><label class="form-label small fw-semibold">Temp (°C)</label><input type="text" name="temperature" class="form-control"></div>
+<div class="col-md-2"><label class="form-label small fw-semibold">Pulse</label><input type="text" name="pulse" class="form-control"></div>
+<div class="col-md-2"><label class="form-label small fw-semibold">O2 Sat (%)</label><input type="text" name="oxygen_saturation" class="form-control"></div>
+<div class="col-md-2"><label class="form-label small fw-semibold">Weight (kg)</label><input type="text" name="weight" class="form-control"></div>
+</div>
+<button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>Save Note</button>
+<a href="{% url 'patient_detail' patient.pk %}" class="btn btn-outline-secondary ms-2">Cancel</a>
+</form>
+</div>
+</div>
+{% endblock %}
+{% block extra_js %}<script>
+const soapTypes = ['soap'];
+document.getElementById('note_type').addEventListener('change', function() {
+    const isSoap = soapTypes.includes(this.value);
+    document.getElementById('soap-fields').style.display = isSoap ? '' : 'none';
+    document.getElementById('free-fields').style.display = isSoap ? 'none' : '';
+});
+</script>{% endblock %}
