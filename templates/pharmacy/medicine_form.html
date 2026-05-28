@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block title %}{{ action }} Medicine{% endblock %}
+{% block page_title %}{{ action }} Medicine{% endblock %}
+{% block content %}
+<div class="row"><div class="col-md-7">
+<div class="card">
+<div class="card-header py-3 px-4">{{ action }} Medicine</div>
+<div class="card-body p-4">
+<form method="post">{% csrf_token %}
+<div class="row g-3">
+<div class="col-md-8"><label class="form-label fw-semibold">Medicine Name *</label><input type="text" name="name" class="form-control" value="{{ medicine.name }}" required></div>
+<div class="col-md-4"><label class="form-label fw-semibold">Category</label>
+<select name="category" class="form-select">
+{% for val, label in categories %}<option value="{{ val }}" {% if medicine.category == val %}selected{% endif %}>{{ label }}</option>{% endfor %}
+</select></div>
+<div class="col-md-8"><label class="form-label fw-semibold">Generic Name</label><input type="text" name="generic_name" class="form-control" value="{{ medicine.generic_name }}"></div>
+<div class="col-md-4"><label class="form-label fw-semibold">Unit</label><input type="text" name="unit" class="form-control" value="{{ medicine.unit|default:'pieces' }}"></div>
+<div class="col-md-6"><label class="form-label fw-semibold">Manufacturer</label><input type="text" name="manufacturer" class="form-control" value="{{ medicine.manufacturer }}"></div>
+<div class="col-md-3"><label class="form-label fw-semibold">Unit Price</label><input type="number" name="unit_price" class="form-control" step="0.01" value="{{ medicine.unit_price|default:0 }}"></div>
+<div class="col-md-3"><label class="form-label fw-semibold">Minimum Stock</label><input type="number" name="minimum_stock" class="form-control" value="{{ medicine.minimum_stock|default:10 }}"></div>
+{% if action == 'Add' %}
+<div class="col-md-4"><label class="form-label fw-semibold">Initial Stock</label><input type="number" name="stock_quantity" class="form-control" value="0"></div>
+{% endif %}
+<div class="col-md-4"><label class="form-label fw-semibold">Expiry Date</label><input type="date" name="expiry_date" class="form-control" value="{{ medicine.expiry_date|date:'Y-m-d' }}"></div>
+<div class="col-md-4"><label class="form-label fw-semibold">Batch Number</label><input type="text" name="batch_number" class="form-control" value="{{ medicine.batch_number }}"></div>
+<div class="col-12"><label class="form-label fw-semibold">Description</label><textarea name="description" class="form-control" rows="2">{{ medicine.description }}</textarea></div>
+<div class="col-12">
+<button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>{{ action }}</button>
+<a href="{% url 'medicine_list' %}" class="btn btn-outline-secondary ms-2">Cancel</a>
+</div>
+</div>
+</form>
+</div>
+</div>
+</div></div>
+{% endblock %}

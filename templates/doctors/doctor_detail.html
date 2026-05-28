@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+{% block title %}Dr. {{ doctor.user.get_full_name }}{% endblock %}
+{% block page_title %}Doctor Profile{% endblock %}
+{% block content %}
+<div class="row g-3">
+<div class="col-md-4">
+<div class="card p-4 text-center mb-3">
+<div style="width:90px;height:90px;background:#e8f4fd;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:2.2rem;font-weight:700;color:var(--primary);margin:0 auto 1rem;">
+{{ doctor.user.first_name|first }}{{ doctor.user.last_name|first }}
+</div>
+<h5 class="fw-bold">Dr. {{ doctor.user.get_full_name }}</h5>
+<p class="text-primary fw-semibold mb-1">{{ doctor.specialization }}</p>
+<p class="text-muted small mb-2">{{ doctor.department.name|default:"General" }}</p>
+<span class="badge {% if doctor.status == 'active' %}bg-success{% else %}bg-warning text-dark{% endif %} mb-3">{{ doctor.get_status_display }}</span>
+<div class="d-flex gap-2 justify-content-center">
+<a href="{% url 'doctor_edit' doctor.pk %}" class="btn btn-sm btn-primary">Edit</a>
+<a href="{% url 'schedule_manage' doctor.pk %}" class="btn btn-sm btn-outline-primary">Schedule</a>
+</div>
+</div>
+<div class="card">
+<div class="card-header py-3 px-4">Details</div>
+<div class="card-body px-4 py-2">
+<div class="py-2 border-bottom"><div class="text-muted small">Doctor ID</div><div class="fw-semibold">{{ doctor.doctor_id }}</div></div>
+<div class="py-2 border-bottom"><div class="text-muted small">Qualification</div><div class="fw-semibold">{{ doctor.qualification }}</div></div>
+<div class="py-2 border-bottom"><div class="text-muted small">Experience</div><div class="fw-semibold">{{ doctor.experience_years }} years</div></div>
+<div class="py-2 border-bottom"><div class="text-muted small">Consultation Fee</div><div class="fw-semibold">{{ hospital.currency_symbol }}{{ doctor.consultation_fee }}</div></div>
+<div class="py-2 border-bottom"><div class="text-muted small">Phone</div><div class="fw-semibold">{{ doctor.user.phone|default:"-" }}</div></div>
+<div class="py-2"><div class="text-muted small">Email</div><div class="fw-semibold">{{ doctor.user.email|default:"-" }}</div></div>
+</div>
+</div>
+</div>
+<div class="col-md-8">
+{% if doctor.bio %}
+<div class="card mb-3">
+<div class="card-header py-3 px-4">About</div>
+<div class="card-body px-4">{{ doctor.bio }}</div>
+</div>
+{% endif %}
+<div class="card mb-3">
+<div class="card-header py-3 px-4 d-flex justify-content-between align-items-center">
+<span><i class="fas fa-clock me-2"></i>Weekly Schedule</span>
+<a href="{% url 'schedule_manage' doctor.pk %}" class="btn btn-sm btn-outline-primary">Edit</a>
+</div>
+<div class="card-body p-0">
+<table class="table table-sm mb-0">
+<thead><tr><th class="ps-4">Day</th><th>From</th><th>To</th><th>Max Patients</th><th>Available</th></tr></thead>
+<tbody>
+{% for s in schedules %}
+<tr>
+<td class="ps-4 fw-semibold">{{ s.get_day_of_week_display }}</td>
+<td>{{ s.start_time|time:"H:i" }}</td>
+<td>{{ s.end_time|time:"H:i" }}</td>
+<td>{{ s.max_patients }}</td>
+<td>{% if s.is_available %}<i class="fas fa-check text-success"></i>{% else %}<i class="fas fa-times text-danger"></i>{% endif %}</td>
+</tr>
+{% empty %}
+<tr><td colspan="5" class="text-center text-muted py-3">No schedule set</td></tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+</div>
+<div class="card">
+<div class="card-header py-3 px-4">Recent Appointments</div>
+<div class="table-responsive">
+<table class="table table-sm mb-0">
+<thead><tr><th class="ps-4">Patient</th><th>Date</th><th>Type</th><th>Status</th></tr></thead>
+<tbody>
+{% for apt in appointments %}
+<tr>
+<td class="ps-4"><a href="{% url 'patient_detail' apt.patient.pk %}">{{ apt.patient.get_full_name }}</a></td>
+<td>{{ apt.appointment_date|date:"M d" }}</td>
+<td>{{ apt.get_appointment_type_display }}</td>
+<td><span class="badge badge-status-{{ apt.status }}">{{ apt.get_status_display }}</span></td>
+</tr>
+{% empty %}
+<tr><td colspan="4" class="text-center text-muted py-3">No appointments</td></tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</div>
+{% endblock %}

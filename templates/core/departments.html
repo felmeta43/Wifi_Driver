@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block title %}Departments{% endblock %}
+{% block page_title %}Departments{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h5 class="mb-0 fw-semibold">All Departments</h5>
+    <a href="{% url 'department_create' %}" class="btn btn-primary"><i class="fas fa-plus me-1"></i>Add Department</a>
+</div>
+<div class="row g-3">
+{% for dept in departments %}
+<div class="col-6 col-md-4 col-lg-3">
+<div class="card text-center p-3">
+    <div style="width:60px;height:60px;background:#e8f4fd;border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;font-size:1.5rem;color:var(--primary);">
+        <i class="fas {{ dept.icon }}"></i>
+    </div>
+    <h6 class="fw-semibold">{{ dept.name }}</h6>
+    <p class="text-muted small mb-2">{{ dept.description|truncatechars:60 }}</p>
+    <span class="badge bg-primary-subtle text-primary">{{ dept.doctor_count }} Doctors</span>
+    <div class="mt-2">
+        <a href="{% url 'department_edit' dept.pk %}" class="btn btn-sm btn-outline-primary"><i class="fas fa-edit"></i></a>
+    </div>
+</div>
+</div>
+{% empty %}
+<div class="col-12 text-center text-muted py-5">No departments yet. <a href="{% url 'department_create' %}">Add one</a></div>
+{% endfor %}
+</div>
+{% endblock %}

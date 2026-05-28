@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{{ hospital.name }}{% endblock %} - HMS</title>
+    {% load static %}
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: {{ hospital.primary_color }};
+            --secondary: {{ hospital.secondary_color }};
+        }
+        * { font-family: 'Inter', sans-serif; }
+        body { background: #f0f2f5; }
+        .sidebar {
+            width: 260px; min-height: 100vh; background: linear-gradient(180deg, #1a2035 0%, #1d2848 100%);
+            position: fixed; top: 0; left: 0; z-index: 1000; transition: all 0.3s;
+            display: flex; flex-direction: column;
+        }
+        .sidebar .brand {
+            padding: 1.5rem 1.2rem; border-bottom: 1px solid rgba(255,255,255,0.08);
+            display: flex; align-items: center; gap: 0.75rem;
+        }
+        .sidebar .brand img { width: 40px; height: 40px; object-fit: cover; border-radius: 8px; }
+        .sidebar .brand-text { color: white; font-weight: 700; font-size: 0.95rem; line-height: 1.2; }
+        .sidebar .brand-text small { font-weight: 300; font-size: 0.72rem; color: rgba(255,255,255,0.6); }
+        .sidebar nav { flex: 1; padding: 1rem 0.75rem; overflow-y: auto; }
+        .sidebar .nav-label {
+            font-size: 0.65rem; font-weight: 600; color: rgba(255,255,255,0.35);
+            text-transform: uppercase; letter-spacing: 0.08em;
+            padding: 0.75rem 0.75rem 0.3rem;
+        }
+        .sidebar .nav-link {
+            color: rgba(255,255,255,0.65); border-radius: 8px; padding: 0.6rem 0.85rem;
+            margin-bottom: 2px; font-size: 0.875rem; font-weight: 500;
+            display: flex; align-items: center; gap: 0.7rem; transition: all 0.2s;
+        }
+        .sidebar .nav-link:hover, .sidebar .nav-link.active {
+            background: rgba(255,255,255,0.1); color: white;
+        }
+        .sidebar .nav-link i { width: 18px; text-align: center; font-size: 0.9rem; }
+        .main-wrapper { margin-left: 260px; min-height: 100vh; display: flex; flex-direction: column; }
+        .topbar {
+            background: white; padding: 0.75rem 1.5rem;
+            display: flex; align-items: center; justify-content: space-between;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06); position: sticky; top: 0; z-index: 100;
+        }
+        .topbar .page-title { font-size: 1.1rem; font-weight: 600; color: #1a2035; }
+        .topbar .user-info { display: flex; align-items: center; gap: 0.75rem; }
+        .topbar .user-avatar {
+            width: 36px; height: 36px; border-radius: 50%; background: var(--primary);
+            display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 0.85rem;
+            overflow: hidden;
+        }
+        .topbar .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .content { flex: 1; padding: 1.5rem; }
+        .card { border: none; border-radius: 12px; box-shadow: 0 1px 6px rgba(0,0,0,0.06); }
+        .card-header { background: white; border-bottom: 1px solid #eef0f3; border-radius: 12px 12px 0 0 !important; font-weight: 600; }
+        .stat-card { border-radius: 12px; padding: 1.25rem; border: none; }
+        .stat-card .stat-icon { width: 52px; height: 52px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; }
+        .stat-card .stat-value { font-size: 1.75rem; font-weight: 700; }
+        .stat-card .stat-label { font-size: 0.78rem; color: #6c757d; font-weight: 500; }
+        .badge-status-scheduled { background: #fff3cd; color: #856404; }
+        .badge-status-confirmed { background: #d1e7dd; color: #0a3622; }
+        .badge-status-completed { background: #cff4fc; color: #055160; }
+        .badge-status-cancelled { background: #f8d7da; color: #842029; }
+        .badge-status-in_progress { background: #d1ecf1; color: #0c5460; }
+        .btn-primary { background: var(--primary); border-color: var(--primary); }
+        .btn-primary:hover { background: color-mix(in srgb, var(--primary) 85%, black); border-color: color-mix(in srgb, var(--primary) 85%, black); }
+        .table { font-size: 0.875rem; }
+        .table thead th { font-weight: 600; font-size: 0.8rem; color: #6c757d; text-transform: uppercase; letter-spacing: 0.04em; border-bottom: 2px solid #eef0f3; }
+        .search-box { background: #f8f9fa; border: 1px solid #eef0f3; border-radius: 8px; padding: 0.4rem 0.8rem; display: flex; align-items: center; gap: 0.5rem; }
+        .search-box input { border: none; background: none; outline: none; font-size: 0.875rem; }
+        .alert { border-radius: 10px; border: none; }
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(-100%); }
+            .sidebar.open { transform: translateX(0); }
+            .main-wrapper { margin-left: 0; }
+        }
+        .sidebar-footer { padding: 1rem 0.75rem; border-top: 1px solid rgba(255,255,255,0.08); }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+{% if user.is_authenticated %}
+<div class="sidebar" id="sidebar">
+    <div class="brand">
+        {% if hospital.logo %}
+            <img src="{{ hospital.logo.url }}" alt="Logo">
+        {% else %}
+            <div style="width:40px;height:40px;background:var(--primary);border-radius:8px;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:1.1rem;">H</div>
+        {% endif %}
+        <div class="brand-text">
+            {{ hospital.name|truncatechars:22 }}<br>
+            <small>{{ hospital.tagline|truncatechars:30 }}</small>
+        </div>
+    </div>
+    <nav>
+        <div class="nav-label">Main</div>
+        <a href="{% url 'dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+            <i class="fas fa-chart-line"></i> Dashboard
+        </a>
+        <div class="nav-label">Patients</div>
+        <a href="{% url 'patient_list' %}" class="nav-link {% if 'patient' in request.resolver_match.url_name %}active{% endif %}">
+            <i class="fas fa-user-injured"></i> Patients
+        </a>
+        <a href="{% url 'patient_create' %}" class="nav-link">
+            <i class="fas fa-user-plus"></i> Register Patient
+        </a>
+        <div class="nav-label">Appointments</div>
+        <a href="{% url 'today_appointments' %}" class="nav-link {% if request.resolver_match.url_name == 'today_appointments' %}active{% endif %}">
+            <i class="fas fa-calendar-day"></i> Today's Appointments
+        </a>
+        <a href="{% url 'appointment_list' %}" class="nav-link {% if 'appointment' in request.resolver_match.url_name %}active{% endif %}">
+            <i class="fas fa-calendar-alt"></i> All Appointments
+        </a>
+        <a href="{% url 'appointment_create' %}" class="nav-link">
+            <i class="fas fa-calendar-plus"></i> Book Appointment
+        </a>
+        <div class="nav-label">Clinical</div>
+        <a href="{% url 'doctor_list' %}" class="nav-link {% if 'doctor' in request.resolver_match.url_name %}active{% endif %}">
+            <i class="fas fa-user-md"></i> Doctors
+        </a>
+        <a href="{% url 'lab_order_list' %}" class="nav-link {% if 'lab_order' in request.resolver_match.url_name %}active{% endif %}">
+            <i class="fas fa-flask"></i> Laboratory
+        </a>
+        <div class="nav-label">Pharmacy</div>
+        <a href="{% url 'medicine_list' %}" class="nav-link {% if 'medicine' in request.resolver_match.url_name %}active{% endif %}">
+            <i class="fas fa-pills"></i> Medicines
+        </a>
+        <a href="{% url 'prescription_list' %}" class="nav-link {% if 'prescription' in request.resolver_match.url_name %}active{% endif %}">
+            <i class="fas fa-prescription-bottle-alt"></i> Prescriptions
+        </a>
+        <div class="nav-label">Finance</div>
+        <a href="{% url 'invoice_list' %}" class="nav-link {% if 'invoice' in request.resolver_match.url_name %}active{% endif %}">
+            <i class="fas fa-file-invoice-dollar"></i> Invoices
+        </a>
+        <a href="{% url 'billing_reports' %}" class="nav-link">
+            <i class="fas fa-chart-bar"></i> Reports
+        </a>
+        {% if user.role == 'admin' or user.is_superuser %}
+        <div class="nav-label">Administration</div>
+        <a href="{% url 'departments' %}" class="nav-link">
+            <i class="fas fa-sitemap"></i> Departments
+        </a>
+        <a href="{% url 'user_list' %}" class="nav-link {% if 'user' in request.resolver_match.url_name %}active{% endif %}">
+            <i class="fas fa-users-cog"></i> Staff Management
+        </a>
+        <a href="{% url 'hospital_settings' %}" class="nav-link">
+            <i class="fas fa-cog"></i> Hospital Settings
+        </a>
+        {% endif %}
+    </nav>
+    <div class="sidebar-footer">
+        <a href="{% url 'profile' %}" class="nav-link">
+            <i class="fas fa-user-circle"></i> {{ user.get_full_name|default:user.username }}
+        </a>
+        <a href="{% url 'logout' %}" class="nav-link text-danger">
+            <i class="fas fa-sign-out-alt"></i> Logout
+        </a>
+    </div>
+</div>
+<div class="main-wrapper">
+    <div class="topbar">
+        <div class="d-flex align-items-center gap-3">
+            <button class="btn btn-sm btn-light d-md-none" onclick="document.getElementById('sidebar').classList.toggle('open')">
+                <i class="fas fa-bars"></i>
+            </button>
+            <span class="page-title">{% block page_title %}Dashboard{% endblock %}</span>
+        </div>
+        <div class="user-info">
+            <a href="{% url 'notifications' %}" class="btn btn-sm btn-light position-relative">
+                <i class="fas fa-bell"></i>
+                {% if unread_notifications > 0 %}
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:0.6rem;">{{ unread_notifications }}</span>
+                {% endif %}
+            </a>
+            <a href="{% url 'profile' %}" class="text-decoration-none">
+                <div class="user-info d-flex align-items-center gap-2">
+                    <div class="user-avatar">
+                        {% if user.profile_picture %}
+                            <img src="{{ user.profile_picture.url }}" alt="">
+                        {% else %}
+                            {{ user.first_name|first|upper }}{{ user.last_name|first|upper }}
+                        {% endif %}
+                    </div>
+                    <div class="d-none d-md-block">
+                        <div style="font-size:0.85rem;font-weight:600;color:#1a2035;">{{ user.get_full_name|default:user.username }}</div>
+                        <div style="font-size:0.72rem;color:#6c757d;">{{ user.get_role_display }}</div>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+    <div class="content">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+            {{ message }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+        {% block content %}{% endblock %}
+    </div>
+</div>
+{% else %}
+    {% block auth_content %}{% endblock %}
+{% endif %}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

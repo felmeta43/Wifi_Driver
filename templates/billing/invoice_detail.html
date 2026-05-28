@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+{% block title %}Invoice {{ invoice.invoice_number }}{% endblock %}
+{% block page_title %}Invoice Detail{% endblock %}
+{% block content %}
+<div class="row g-3">
+<div class="col-md-8">
+<div class="card mb-3" id="invoice-print">
+<div class="card-body p-4">
+<div class="d-flex justify-content-between mb-4">
+<div>
+{% if hospital.logo %}<img src="{{ hospital.logo.url }}" alt="" style="height:50px;border-radius:8px;margin-bottom:0.5rem;">{% endif %}
+<h5 class="fw-bold">{{ hospital.name }}</h5>
+<div class="text-muted small">{{ hospital.address }}<br>{{ hospital.phone }} &bull; {{ hospital.email }}</div>
+</div>
+<div class="text-end">
+<h4 class="fw-bold text-primary">INVOICE</h4>
+<div class="text-muted small">{{ invoice.invoice_number }}<br>Date: {{ invoice.created_at|date:"M d, Y" }}</div>
+{% if invoice.due_date %}<div class="text-muted small">Due: {{ invoice.due_date|date:"M d, Y" }}</div>{% endif %}
+</div>
+</div>
+<div class="row mb-4">
+<div class="col-6">
+<div class="fw-bold small text-muted mb-1">BILLED TO</div>
+<div class="fw-semibold">{{ invoice.patient.get_full_name }}</div>
+<div class="text-muted small">{{ invoice.patient.patient_id }}<br>{{ invoice.patient.phone }}</div>
+</div>
+<div class="col-6 text-end">
+<span class="badge {% if invoice.status == 'paid' %}bg-success{% elif invoice.status == 'pending' %}bg-warning text-dark{% else %}bg-secondary{% endif %} px-3 py-2 fs-6">
+{{ invoice.get_status_display }}
+</span>
+</div>
+</div>
+<div class="table-responsive">
+<table class="table table-bordered table-sm">
+<thead class="table-light"><tr><th>Description</th><th>Category</th><th class="text-end">Qty</th><th class="text-end">Unit Price</th><th class="text-end">Total</th></tr></thead>
+<tbody>
+{% for item in items %}
+<tr>
+<td>{{ item.description }}</td>
+<td class="text-muted small">{{ item.get_category_display }}</td>
+<td class="text-end">{{ item.quantity }}</td>
+<td class="text-end">{{ hospital.currency_symbol }}{{ item.unit_price }}</td>
+<td class="text-end fw-semibold">{{ hospital.currency_symbol }}{{ item.total_price }}</td>
+</tr>
+{% endfor %}
+</tbody>
+<tfoot>
+<tr><td colspan="4" class="text-end">Subtotal</td><td class="text-end">{{ hospital.currency_symbol }}{{ invoice.subtotal }}</td></tr>
+{% if invoice.discount_amount %}<tr><td colspan="4" class="text-end text-success">Discount</td><td class="text-end text-success">-{{ hospital.currency_symbol }}{{ invoice.discount_amount }}</td></tr>{% endif %}
+{% if invoice.tax_amount %}<tr><td colspan="4" class="text-end">Tax</td><td class="text-end">{{ hospital.currency_symbol }}{{ invoice.tax_amount }}</td></tr>{% endif %}
+<tr class="table-light fw-bold"><td colspan="4" class="text-end">TOTAL</td><td class="text-end fs-5">{{ hospital.currency_symbol }}{{ invoice.total_amount }}</td></tr>
+<tr class="text-success"><td colspan="4" class="text-end">Paid</td><td class="text-end">{{ hospital.currency_symbol }}{{ invoice.paid_amount }}</td></tr>
+<tr class="fw-bold {% if invoice.get_balance > 0 %}text-danger{% else %}text-success{% endif %}"><td colspan="4" class="text-end">Balance Due</td><td class="text-end">{{ hospital.currency_symbol }}{{ invoice.get_balance }}</td></tr>
+</tfoot>
+</table>
+</div>
+{% if invoice.notes %}<div class="alert alert-light mt-3 small">{{ invoice.notes }}</div>{% endif %}
+</div>
+</div>
+<div class="card">
+<div class="card-header py-3 px-4">Payment History</div>
+<div class="table-responsive">
+<table class="table table-sm mb-0">
+<thead><tr><th class="ps-4">Date</th><th>Method</th><th>Reference</th><th class="pe-4 text-end">Amount</th></tr></thead>
+<tbody>
+{% for pay in payments %}
+<tr>
+<td class="ps-4">{{ pay.payment_date|date:"M d, Y H:i" }}</td>
+<td>{{ pay.get_method_display }}</td>
+<td class="text-muted">{{ pay.reference|default:"-" }}</td>
+<td class="pe-4 text-end text-success fw-semibold">{{ hospital.currency_symbol }}{{ pay.amount }}</td>
+</tr>
+{% empty %}<tr><td colspan="4" class="text-center text-muted py-3">No payments yet</td></tr>{% endfor %}
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div class="col-md-4">
+<div class="card mb-3">
+<div class="card-header py-3 px-4">Actions</div>
+<div class="card-body p-3 d-flex flex-column gap-2">
+<button onclick="window.print()" class="btn btn-outline-primary btn-sm"><i class="fas fa-print me-1"></i>Print Invoice</button>
+</div>
+</div>
+{% if invoice.status != 'paid' and invoice.status != 'cancelled' %}
+<div class="card">
+<div class="card-header py-3 px-4">Record Payment</div>
+<div class="card-body p-3">
+<form method="post" action="{% url 'add_payment' invoice.pk %}">{% csrf_token %}
+<div class="mb-2"><label class="form-label small fw-semibold">Amount *</label>
+<input type="number" name="amount" class="form-control form-control-sm" step="0.01" max="{{ invoice.get_balance }}" value="{{ invoice.get_balance }}" required></div>
+<div class="mb-2"><label class="form-label small fw-semibold">Method</label>
+<select name="method" class="form-select form-select-sm">
+<option value="cash">Cash</option>
+<option value="card">Card</option>
+<option value="insurance">Insurance</option>
+<option value="bank_transfer">Bank Transfer</option>
+<option value="mobile_money">Mobile Money</option>
+</select></div>
+<div class="mb-2"><label class="form-label small fw-semibold">Reference</label><input type="text" name="reference" class="form-control form-control-sm"></div>
+<button type="submit" class="btn btn-success btn-sm w-100"><i class="fas fa-check me-1"></i>Record Payment</button>
+</form>
+</div>
+</div>
+{% endif %}
+</div>
+</div>
+<style>
+@media print {
+  .sidebar, .topbar, .col-md-4, .card:not(#invoice-print), .alert { display: none !important; }
+  .main-wrapper { margin-left: 0 !important; }
+  #invoice-print { box-shadow: none !important; }
+}
+</style>
+{% endblock %}

@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block title %}Lab Tests{% endblock %}
+{% block page_title %}Lab Tests{% endblock %}
+{% block content %}
+<div class="row g-3">
+<div class="col-md-4">
+<div class="card">
+<div class="card-header py-3 px-4">Add Lab Test</div>
+<div class="card-body p-4">
+<form method="post">{% csrf_token %}
+<div class="mb-3"><label class="form-label fw-semibold">Test Name *</label><input type="text" name="name" class="form-control" required></div>
+<div class="mb-3"><label class="form-label fw-semibold">Price</label><input type="number" name="price" class="form-control" step="0.01" value="0"></div>
+<div class="mb-3"><label class="form-label fw-semibold">Normal Range</label><input type="text" name="normal_range" class="form-control" placeholder="e.g. 70-100 mg/dL"></div>
+<div class="mb-3"><label class="form-label fw-semibold">Unit</label><input type="text" name="unit" class="form-control" placeholder="e.g. mg/dL"></div>
+<div class="mb-3"><label class="form-label fw-semibold">Turnaround Time</label><input type="text" name="turnaround_time" class="form-control" placeholder="e.g. 2 hours"></div>
+<div class="mb-3"><label class="form-label fw-semibold">Description</label><textarea name="description" class="form-control" rows="2"></textarea></div>
+<button type="submit" class="btn btn-primary w-100">Add Test</button>
+</form>
+</div>
+</div>
+</div>
+<div class="col-md-8">
+<div class="card">
+<div class="card-header py-3 px-4 d-flex justify-content-between align-items-center">
+<span>Lab Tests Catalog</span>
+<a href="{% url 'lab_order_create' %}" class="btn btn-sm btn-primary"><i class="fas fa-flask me-1"></i>New Order</a>
+</div>
+<div class="table-responsive">
+<table class="table table-hover mb-0">
+<thead><tr><th class="ps-4">Name</th><th>Normal Range</th><th>Unit</th><th>Price</th><th>Turnaround</th></tr></thead>
+<tbody>
+{% for test in tests %}
+<tr>
+<td class="ps-4 fw-semibold">{{ test.name }}</td>
+<td class="text-muted small">{{ test.normal_range|default:"-" }}</td>
+<td class="text-muted small">{{ test.unit|default:"-" }}</td>
+<td>{{ hospital.currency_symbol }}{{ test.price }}</td>
+<td class="text-muted small">{{ test.turnaround_time|default:"-" }}</td>
+</tr>
+{% empty %}<tr><td colspan="5" class="text-center text-muted py-4">No tests yet.</td></tr>{% endfor %}
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</div>
+{% endblock %}

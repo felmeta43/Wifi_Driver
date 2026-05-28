@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% block title %}{{ action }} Patient{% endblock %}
+{% block page_title %}{{ action }} Patient{% endblock %}
+{% block content %}
+<div class="card">
+<div class="card-header py-3 px-4"><i class="fas fa-user-plus me-2 text-primary"></i>Patient Information</div>
+<div class="card-body p-4">
+<form method="post">{% csrf_token %}
+<h6 class="fw-bold text-muted mb-3 border-bottom pb-2">Personal Details</h6>
+<div class="row g-3 mb-4">
+<div class="col-md-4"><label class="form-label fw-semibold">First Name *</label><input type="text" name="first_name" class="form-control" value="{{ patient.first_name }}" required></div>
+<div class="col-md-4"><label class="form-label fw-semibold">Last Name *</label><input type="text" name="last_name" class="form-control" value="{{ patient.last_name }}" required></div>
+<div class="col-md-4"><label class="form-label fw-semibold">Gender *</label>
+<select name="gender" class="form-select" required>
+{% for val, label in genders %}<option value="{{ val }}" {% if patient.gender == val %}selected{% endif %}>{{ label }}</option>{% endfor %}
+</select></div>
+<div class="col-md-4"><label class="form-label fw-semibold">Date of Birth *</label><input type="date" name="date_of_birth" class="form-control" value="{{ patient.date_of_birth|date:'Y-m-d' }}" required></div>
+<div class="col-md-4"><label class="form-label fw-semibold">Blood Group</label>
+<select name="blood_group" class="form-select">
+<option value="">-- Select --</option>
+{% for val, label in blood_groups %}<option value="{{ val }}" {% if patient.blood_group == val %}selected{% endif %}>{{ label }}</option>{% endfor %}
+</select></div>
+<div class="col-md-4"><label class="form-label fw-semibold">Marital Status</label><input type="text" name="marital_status" class="form-control" value="{{ patient.marital_status }}"></div>
+<div class="col-md-4"><label class="form-label fw-semibold">Occupation</label><input type="text" name="occupation" class="form-control" value="{{ patient.occupation }}"></div>
+<div class="col-md-4"><label class="form-label fw-semibold">Nationality</label><input type="text" name="nationality" class="form-control" value="{{ patient.nationality }}"></div>
+</div>
+<h6 class="fw-bold text-muted mb-3 border-bottom pb-2">Contact Information</h6>
+<div class="row g-3 mb-4">
+<div class="col-md-4"><label class="form-label fw-semibold">Phone *</label><input type="text" name="phone" class="form-control" value="{{ patient.phone }}" required></div>
+<div class="col-md-4"><label class="form-label fw-semibold">Email</label><input type="email" name="email" class="form-control" value="{{ patient.email }}"></div>
+<div class="col-12"><label class="form-label fw-semibold">Address *</label><textarea name="address" class="form-control" rows="2" required>{{ patient.address }}</textarea></div>
+</div>
+<h6 class="fw-bold text-muted mb-3 border-bottom pb-2">Emergency Contact</h6>
+<div class="row g-3 mb-4">
+<div class="col-md-4"><label class="form-label fw-semibold">Name</label><input type="text" name="emergency_contact_name" class="form-control" value="{{ patient.emergency_contact_name }}"></div>
+<div class="col-md-4"><label class="form-label fw-semibold">Phone</label><input type="text" name="emergency_contact_phone" class="form-control" value="{{ patient.emergency_contact_phone }}"></div>
+<div class="col-md-4"><label class="form-label fw-semibold">Relation</label><input type="text" name="emergency_contact_relation" class="form-control" value="{{ patient.emergency_contact_relation }}"></div>
+</div>
+<h6 class="fw-bold text-muted mb-3 border-bottom pb-2">Medical History</h6>
+<div class="row g-3 mb-4">
+<div class="col-md-6"><label class="form-label fw-semibold">Allergies</label><textarea name="allergies" class="form-control" rows="2">{{ patient.allergies }}</textarea></div>
+<div class="col-md-6"><label class="form-label fw-semibold">Chronic Conditions</label><textarea name="chronic_conditions" class="form-control" rows="2">{{ patient.chronic_conditions }}</textarea></div>
+<div class="col-12"><label class="form-label fw-semibold">Current Medications</label><textarea name="current_medications" class="form-control" rows="2">{{ patient.current_medications }}</textarea></div>
+</div>
+<h6 class="fw-bold text-muted mb-3 border-bottom pb-2">Insurance</h6>
+<div class="row g-3 mb-4">
+<div class="col-md-6"><label class="form-label fw-semibold">Insurance Provider</label><input type="text" name="insurance_provider" class="form-control" value="{{ patient.insurance_provider }}"></div>
+<div class="col-md-6"><label class="form-label fw-semibold">Insurance Number</label><input type="text" name="insurance_number" class="form-control" value="{{ patient.insurance_number }}"></div>
+</div>
+{% if action == 'Edit' %}
+<div class="mb-3"><label class="form-label fw-semibold">Status</label>
+<select name="status" class="form-select">
+<option value="active" {% if patient.status == 'active' %}selected{% endif %}>Active</option>
+<option value="inactive" {% if patient.status == 'inactive' %}selected{% endif %}>Inactive</option>
+</select></div>
+{% endif %}
+<div class="d-flex gap-2">
+<button type="submit" class="btn btn-primary px-4"><i class="fas fa-save me-1"></i>{{ action }} Patient</button>
+<a href="{% url 'patient_list' %}" class="btn btn-outline-secondary">Cancel</a>
+</div>
+</form>
+</div>
+</div>
+{% endblock %}

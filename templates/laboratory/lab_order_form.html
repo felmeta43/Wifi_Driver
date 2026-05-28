@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block title %}New Lab Order{% endblock %}
+{% block page_title %}New Lab Order{% endblock %}
+{% block content %}
+<div class="card">
+<div class="card-header py-3 px-4"><i class="fas fa-flask me-2 text-primary"></i>Create Lab Order</div>
+<div class="card-body p-4">
+<form method="post">{% csrf_token %}
+<div class="row g-3 mb-4">
+<div class="col-md-6"><label class="form-label fw-semibold">Patient *</label>
+<select name="patient" class="form-select" required>
+<option value="">-- Select Patient --</option>
+{% for p in patients %}<option value="{{ p.pk }}">{{ p.get_full_name }} ({{ p.patient_id }})</option>{% endfor %}
+</select></div>
+<div class="col-md-6"><label class="form-label fw-semibold">Doctor *</label>
+<select name="doctor" class="form-select" required>
+<option value="">-- Select Doctor --</option>
+{% for d in doctors %}<option value="{{ d.pk }}">Dr. {{ d.user.get_full_name }}</option>{% endfor %}
+</select></div>
+</div>
+<h6 class="fw-bold border-bottom pb-2 mb-3">Select Tests</h6>
+<div class="row g-2 mb-3">
+{% for test in tests %}
+<div class="col-md-4 col-lg-3">
+<label class="card p-2 d-flex align-items-start gap-2 cursor-pointer" style="cursor:pointer;">
+<input type="checkbox" name="tests" value="{{ test.pk }}" class="mt-1">
+<div>
+<div class="fw-semibold small">{{ test.name }}</div>
+<div class="text-muted" style="font-size:0.75rem;">{{ hospital.currency_symbol }}{{ test.price }} &bull; {{ test.turnaround_time|default:"N/A" }}</div>
+</div>
+</label>
+</div>
+{% endfor %}
+</div>
+<div class="mb-3"><label class="form-label fw-semibold">Notes</label><textarea name="notes" class="form-control" rows="2"></textarea></div>
+<button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>Create Order</button>
+<a href="{% url 'lab_order_list' %}" class="btn btn-outline-secondary ms-2">Cancel</a>
+</form>
+</div>
+</div>
+{% endblock %}

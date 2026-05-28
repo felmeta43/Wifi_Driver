@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block title %}Admit Patient{% endblock %}
+{% block page_title %}Patient Admission{% endblock %}
+{% block content %}
+<div class="card"><div class="col-md-6 mx-auto">
+<div class="card-header py-3 px-4"><i class="fas fa-bed me-2 text-primary"></i>Admit: {{ patient.get_full_name }}</div>
+<div class="card-body p-4">
+<form method="post">{% csrf_token %}
+<div class="row g-3">
+<div class="col-12"><label class="form-label fw-semibold">Doctor *</label>
+<select name="doctor" class="form-select" required>
+{% for doc in doctors %}<option value="{{ doc.pk }}">Dr. {{ doc.user.get_full_name }}</option>{% endfor %}
+</select></div>
+<div class="col-md-6"><label class="form-label fw-semibold">Room Number *</label><input type="text" name="room_number" class="form-control" required></div>
+<div class="col-md-6"><label class="form-label fw-semibold">Room Type</label>
+<select name="room_type" class="form-select">
+<option>General</option><option>Private</option><option>ICU</option><option>Emergency</option>
+</select></div>
+<div class="col-12"><label class="form-label fw-semibold">Diagnosis *</label><textarea name="diagnosis" class="form-control" rows="3" required></textarea></div>
+<div class="col-12"><label class="form-label fw-semibold">Notes</label><textarea name="notes" class="form-control" rows="2"></textarea></div>
+<div class="col-12">
+<button type="submit" class="btn btn-primary"><i class="fas fa-bed me-1"></i>Admit Patient</button>
+<a href="{% url 'patient_detail' patient.pk %}" class="btn btn-outline-secondary ms-2">Cancel</a>
+</div>
+</div>
+</form>
+</div>
+</div></div>
+{% endblock %}

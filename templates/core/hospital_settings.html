@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+{% block title %}Hospital Settings{% endblock %}
+{% block page_title %}Hospital Settings{% endblock %}
+{% block content %}
+<div class="row">
+<div class="col-12 col-lg-10">
+<div class="card">
+<div class="card-header py-3 px-4"><i class="fas fa-hospital me-2 text-primary"></i>Configure Hospital Settings</div>
+<div class="card-body p-4">
+<form method="post" enctype="multipart/form-data">
+{% csrf_token %}
+<div class="row g-3">
+<div class="col-md-8">
+<label class="form-label fw-semibold">Hospital Name *</label>
+<input type="text" name="name" class="form-control" value="{{ settings.name }}" required>
+</div>
+<div class="col-md-4">
+<label class="form-label fw-semibold">Logo</label>
+<input type="file" name="logo" class="form-control" accept="image/*">
+{% if settings.logo %}<small class="text-muted">Current: <a href="{{ settings.logo.url }}" target="_blank">View</a></small>{% endif %}
+</div>
+<div class="col-12">
+<label class="form-label fw-semibold">Tagline</label>
+<input type="text" name="tagline" class="form-control" value="{{ settings.tagline }}">
+</div>
+<div class="col-md-6">
+<label class="form-label fw-semibold">Phone</label>
+<input type="text" name="phone" class="form-control" value="{{ settings.phone }}">
+</div>
+<div class="col-md-6">
+<label class="form-label fw-semibold">Email</label>
+<input type="email" name="email" class="form-control" value="{{ settings.email }}">
+</div>
+<div class="col-12">
+<label class="form-label fw-semibold">Address</label>
+<textarea name="address" class="form-control" rows="2">{{ settings.address }}</textarea>
+</div>
+<div class="col-md-6">
+<label class="form-label fw-semibold">Website</label>
+<input type="url" name="website" class="form-control" value="{{ settings.website }}">
+</div>
+<div class="col-md-6">
+<label class="form-label fw-semibold">Emergency Number</label>
+<input type="text" name="emergency_number" class="form-control" value="{{ settings.emergency_number }}">
+</div>
+<div class="col-md-4">
+<label class="form-label fw-semibold">Registration Number</label>
+<input type="text" name="registration_number" class="form-control" value="{{ settings.registration_number }}">
+</div>
+<div class="col-md-4">
+<label class="form-label fw-semibold">Established Year</label>
+<input type="text" name="established_year" class="form-control" value="{{ settings.established_year }}">
+</div>
+<div class="col-md-4">
+<label class="form-label fw-semibold">Bed Capacity</label>
+<input type="number" name="bed_capacity" class="form-control" value="{{ settings.bed_capacity }}">
+</div>
+<div class="col-md-3">
+<label class="form-label fw-semibold">Primary Color</label>
+<input type="color" name="primary_color" class="form-control form-control-color w-100" value="{{ settings.primary_color }}">
+</div>
+<div class="col-md-3">
+<label class="form-label fw-semibold">Secondary Color</label>
+<input type="color" name="secondary_color" class="form-control form-control-color w-100" value="{{ settings.secondary_color }}">
+</div>
+<div class="col-md-3">
+<label class="form-label fw-semibold">Currency Symbol</label>
+<input type="text" name="currency_symbol" class="form-control" value="{{ settings.currency_symbol }}">
+</div>
+<div class="col-md-3">
+<label class="form-label fw-semibold">Tax %</label>
+<input type="number" name="tax_percentage" class="form-control" step="0.01" value="{{ settings.tax_percentage }}">
+</div>
+<div class="col-md-6">
+<label class="form-label fw-semibold">Working Hours</label>
+<input type="text" name="working_hours" class="form-control" value="{{ settings.working_hours }}">
+</div>
+<div class="col-12">
+<label class="form-label fw-semibold">About Hospital</label>
+<textarea name="about" class="form-control" rows="3">{{ settings.about }}</textarea>
+</div>
+<div class="col-md-3"><label class="form-label fw-semibold">Facebook</label><input type="url" name="facebook_url" class="form-control" value="{{ settings.facebook_url }}"></div>
+<div class="col-md-3"><label class="form-label fw-semibold">Twitter</label><input type="url" name="twitter_url" class="form-control" value="{{ settings.twitter_url }}"></div>
+<div class="col-md-3"><label class="form-label fw-semibold">Instagram</label><input type="url" name="instagram_url" class="form-control" value="{{ settings.instagram_url }}"></div>
+<div class="col-md-3"><label class="form-label fw-semibold">LinkedIn</label><input type="url" name="linkedin_url" class="form-control" value="{{ settings.linkedin_url }}"></div>
+<div class="col-12 mt-2">
+<button type="submit" class="btn btn-primary px-4"><i class="fas fa-save me-2"></i>Save Settings</button>
+</div>
+</div>
+</form>
+</div>
+</div>
+</div>
+</div>
+{% endblock %}

@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% block title %}New Prescription{% endblock %}
+{% block page_title %}Create Prescription{% endblock %}
+{% block content %}
+<div class="card">
+<div class="card-header py-3 px-4"><i class="fas fa-prescription me-2 text-primary"></i>New Prescription</div>
+<div class="card-body p-4">
+<form method="post">{% csrf_token %}
+<div class="row g-3 mb-4">
+<div class="col-md-6"><label class="form-label fw-semibold">Patient *</label>
+<select name="patient" class="form-select" required>
+<option value="">-- Select Patient --</option>
+{% for p in patients %}<option value="{{ p.pk }}">{{ p.get_full_name }} ({{ p.patient_id }})</option>{% endfor %}
+</select></div>
+<div class="col-md-6"><label class="form-label fw-semibold">Doctor *</label>
+<select name="doctor" class="form-select" required>
+<option value="">-- Select Doctor --</option>
+{% for d in doctors %}<option value="{{ d.pk }}">Dr. {{ d.user.get_full_name }}</option>{% endfor %}
+</select></div>
+</div>
+<h6 class="fw-bold border-bottom pb-2 mb-3">Medicines</h6>
+<div id="rx-items">
+<div class="card mb-2 rx-item">
+<div class="card-body p-3">
+<div class="row g-2">
+<div class="col-md-4"><label class="form-label small">Medicine *</label>
+<select name="medicine" class="form-select form-select-sm" required>
+<option value="">-- Select --</option>
+{% for m in medicines %}<option value="{{ m.pk }}">{{ m.name }} (Stock: {{ m.stock_quantity }})</option>{% endfor %}
+</select></div>
+<div class="col-md-2"><label class="form-label small">Dosage</label><input type="text" name="dosage" class="form-control form-control-sm" placeholder="e.g. 500mg"></div>
+<div class="col-md-2"><label class="form-label small">Frequency</label><input type="text" name="frequency" class="form-control form-control-sm" placeholder="e.g. 3x/day"></div>
+<div class="col-md-2"><label class="form-label small">Duration</label><input type="text" name="duration" class="form-control form-control-sm" placeholder="e.g. 7 days"></div>
+<div class="col-md-1"><label class="form-label small">Qty</label><input type="number" name="quantity" class="form-control form-control-sm" value="1" min="1"></div>
+<div class="col-md-1 d-flex align-items-end"><button type="button" class="btn btn-sm btn-outline-danger w-100" onclick="removeRx(this)"><i class="fas fa-trash"></i></button></div>
+<div class="col-12"><label class="form-label small">Instructions</label><input type="text" name="instructions" class="form-control form-control-sm" placeholder="Special instructions..."></div>
+</div>
+</div>
+</div>
+</div>
+<button type="button" class="btn btn-sm btn-outline-primary mb-3" onclick="addRx()"><i class="fas fa-plus me-1"></i>Add Medicine</button>
+<div class="mb-3"><label class="form-label fw-semibold">Notes</label><textarea name="notes" class="form-control" rows="2"></textarea></div>
+<button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>Create Prescription</button>
+<a href="{% url 'prescription_list' %}" class="btn btn-outline-secondary ms-2">Cancel</a>
+</form>
+</div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+function addRx() {
+    const c = document.getElementById('rx-items');
+    const item = c.querySelector('.rx-item').cloneNode(true);
+    item.querySelectorAll('input').forEach(i => { if(i.type !== 'number') i.value = ''; else i.value = i.name === 'quantity' ? '1' : i.value; });
+    item.querySelector('select').selectedIndex = 0;
+    c.appendChild(item);
+}
+function removeRx(btn) {
+    const items = document.querySelectorAll('.rx-item');
+    if (items.length > 1) btn.closest('.rx-item').remove();
+}
+</script>
+{% endblock %}

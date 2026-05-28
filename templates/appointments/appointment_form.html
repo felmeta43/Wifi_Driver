@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block title %}{% if appointment %}Edit{% else %}Book{% endif %} Appointment{% endblock %}
+{% block page_title %}{% if appointment %}Edit{% else %}Book{% endif %} Appointment{% endblock %}
+{% block content %}
+<div class="row"><div class="col-md-8">
+<div class="card">
+<div class="card-header py-3 px-4"><i class="fas fa-calendar-plus me-2 text-primary"></i>Appointment Details</div>
+<div class="card-body p-4">
+<form method="post">{% csrf_token %}
+<div class="row g-3">
+<div class="col-md-6"><label class="form-label fw-semibold">Patient *</label>
+<select name="patient" class="form-select" required>
+<option value="">-- Select Patient --</option>
+{% for p in patients %}<option value="{{ p.pk }}" {% if appointment.patient.pk == p.pk %}selected{% endif %}>{{ p.get_full_name }} ({{ p.patient_id }})</option>{% endfor %}
+</select></div>
+<div class="col-md-6"><label class="form-label fw-semibold">Doctor *</label>
+<select name="doctor" class="form-select" required>
+<option value="">-- Select Doctor --</option>
+{% for d in doctors %}<option value="{{ d.pk }}" {% if appointment.doctor.pk == d.pk %}selected{% endif %}>Dr. {{ d.user.get_full_name }} - {{ d.specialization }}</option>{% endfor %}
+</select></div>
+<div class="col-md-4"><label class="form-label fw-semibold">Date *</label><input type="date" name="appointment_date" class="form-control" value="{{ appointment.appointment_date|date:'Y-m-d' }}" min="{{ today }}" required></div>
+<div class="col-md-4"><label class="form-label fw-semibold">Time *</label><input type="time" name="appointment_time" class="form-control" value="{{ appointment.appointment_time|time:'H:i' }}" required></div>
+<div class="col-md-4"><label class="form-label fw-semibold">Type</label>
+<select name="appointment_type" class="form-select">
+{% for val, label in type_choices %}<option value="{{ val }}" {% if appointment.appointment_type == val %}selected{% endif %}>{{ label }}</option>{% endfor %}
+</select></div>
+{% if appointment %}
+<div class="col-md-4"><label class="form-label fw-semibold">Status</label>
+<select name="status" class="form-select">
+{% for val, label in status_choices %}<option value="{{ val }}" {% if appointment.status == val %}selected{% endif %}>{{ label }}</option>{% endfor %}
+</select></div>
+{% endif %}
+<div class="col-12"><label class="form-label fw-semibold">Reason for Visit *</label><textarea name="reason" class="form-control" rows="3" required>{{ appointment.reason }}</textarea></div>
+<div class="col-12"><label class="form-label fw-semibold">Notes</label><textarea name="notes" class="form-control" rows="2">{{ appointment.notes }}</textarea></div>
+<div class="col-12">
+<button type="submit" class="btn btn-primary px-4"><i class="fas fa-save me-1"></i>{% if appointment %}Update{% else %}Book{% endif %} Appointment</button>
+<a href="{% url 'appointment_list' %}" class="btn btn-outline-secondary ms-2">Cancel</a>
+</div>
+</div>
+</form>
+</div>
+</div>
+</div></div>
+{% endblock %}

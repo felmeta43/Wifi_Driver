@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block title %}Prescription {{ prescription.prescription_id }}{% endblock %}
+{% block page_title %}Prescription Detail{% endblock %}
+{% block content %}
+<div class="row g-3">
+<div class="col-md-8">
+<div class="card mb-3">
+<div class="card-header py-3 px-4 d-flex justify-content-between">
+<span><i class="fas fa-prescription me-2"></i>{{ prescription.prescription_id }}</span>
+<span class="badge {% if prescription.status == 'dispensed' %}bg-success{% elif prescription.status == 'pending' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">{{ prescription.get_status_display }}</span>
+</div>
+<div class="card-body p-4">
+<div class="row mb-3">
+<div class="col-md-6"><div class="text-muted small">Patient</div><div class="fw-semibold">{{ prescription.patient.get_full_name }}</div></div>
+<div class="col-md-6"><div class="text-muted small">Doctor</div><div class="fw-semibold">Dr. {{ prescription.doctor.user.get_full_name }}</div></div>
+<div class="col-md-6 mt-2"><div class="text-muted small">Date</div><div class="fw-semibold">{{ prescription.created_at|date:"M d, Y" }}</div></div>
+{% if prescription.notes %}<div class="col-12 mt-2"><div class="text-muted small">Notes</div><div>{{ prescription.notes }}</div></div>{% endif %}
+</div>
+<div class="table-responsive">
+<table class="table table-bordered table-sm">
+<thead class="table-light"><tr><th>Medicine</th><th>Dosage</th><th>Frequency</th><th>Duration</th><th>Qty</th><th>Instructions</th></tr></thead>
+<tbody>
+{% for item in items %}
+<tr>
+<td class="fw-semibold">{{ item.medicine.name }}</td>
+<td>{{ item.dosage }}</td>
+<td>{{ item.frequency }}</td>
+<td>{{ item.duration }}</td>
+<td>{{ item.quantity }}</td>
+<td class="text-muted small">{{ item.instructions|default:"-" }}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+{% if prescription.status == 'pending' %}
+<form method="post" action="{% url 'dispense_prescription' prescription.pk %}">{% csrf_token %}
+<button type="submit" class="btn btn-success mt-2"><i class="fas fa-check me-1"></i>Dispense Prescription</button>
+</form>
+{% endif %}
+</div>
+</div>
+</div>
+</div>
+{% endblock %}

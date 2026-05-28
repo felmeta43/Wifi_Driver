@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block title %}Prescriptions{% endblock %}
+{% block page_title %}Prescriptions{% endblock %}
+{% block content %}
+<div class="card">
+<div class="card-header py-3 px-4 d-flex justify-content-between">
+<span><i class="fas fa-prescription-bottle-alt me-2 text-primary"></i>Prescriptions</span>
+<a href="{% url 'prescription_create' %}" class="btn btn-primary btn-sm"><i class="fas fa-plus me-1"></i>New Prescription</a>
+</div>
+<div class="table-responsive">
+<table class="table table-hover mb-0">
+<thead><tr><th class="ps-4">ID</th><th>Patient</th><th>Doctor</th><th>Date</th><th>Status</th><th class="pe-4">Actions</th></tr></thead>
+<tbody>
+{% for rx in prescriptions %}
+<tr>
+<td class="ps-4 fw-semibold"><a href="{% url 'prescription_detail' rx.pk %}" class="text-decoration-none">{{ rx.prescription_id }}</a></td>
+<td>{{ rx.patient.get_full_name }}</td>
+<td>Dr. {{ rx.doctor.user.get_full_name }}</td>
+<td class="text-muted small">{{ rx.created_at|date:"M d, Y" }}</td>
+<td><span class="badge {% if rx.status == 'dispensed' %}bg-success{% elif rx.status == 'pending' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">{{ rx.get_status_display }}</span></td>
+<td class="pe-4"><a href="{% url 'prescription_detail' rx.pk %}" class="btn btn-sm btn-outline-primary"><i class="fas fa-eye"></i></a></td>
+</tr>
+{% empty %}
+<tr><td colspan="6" class="text-center text-muted py-5">No prescriptions found.</td></tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+</div>
+{% endblock %}

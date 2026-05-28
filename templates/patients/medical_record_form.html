@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block title %}Add Medical Record{% endblock %}
+{% block page_title %}Add Medical Record{% endblock %}
+{% block content %}
+<div class="card">
+<div class="card-header py-3 px-4"><i class="fas fa-notes-medical me-2 text-primary"></i>Medical Record for {{ patient.get_full_name }}</div>
+<div class="card-body p-4">
+<form method="post">{% csrf_token %}
+<div class="row g-3">
+<div class="col-md-6"><label class="form-label fw-semibold">Doctor *</label>
+<select name="doctor" class="form-select" required>
+<option value="">-- Select Doctor --</option>
+{% for doc in doctors %}<option value="{{ doc.pk }}">Dr. {{ doc.user.get_full_name }} - {{ doc.specialization }}</option>{% endfor %}
+</select></div>
+<div class="col-md-6"><label class="form-label fw-semibold">Follow-up Date</label><input type="date" name="follow_up_date" class="form-control"></div>
+<div class="col-12"><label class="form-label fw-semibold">Chief Complaint *</label><textarea name="chief_complaint" class="form-control" rows="2" required></textarea></div>
+<div class="col-12"><label class="form-label fw-semibold">Diagnosis *</label><textarea name="diagnosis" class="form-control" rows="2" required></textarea></div>
+<div class="col-12"><label class="form-label fw-semibold">Treatment *</label><textarea name="treatment" class="form-control" rows="2" required></textarea></div>
+<div class="col-12"><label class="form-label fw-semibold">Prescription Notes</label><textarea name="prescription" class="form-control" rows="2"></textarea></div>
+<div class="col-12"><h6 class="fw-bold text-muted border-bottom pb-2">Vital Signs</h6></div>
+<div class="col-md-3"><label class="form-label fw-semibold small">Blood Pressure</label><input type="text" name="blood_pressure" class="form-control" placeholder="e.g. 120/80"></div>
+<div class="col-md-3"><label class="form-label fw-semibold small">Temperature (°C)</label><input type="text" name="temperature" class="form-control" placeholder="e.g. 36.6"></div>
+<div class="col-md-2"><label class="form-label fw-semibold small">Pulse (bpm)</label><input type="text" name="pulse" class="form-control"></div>
+<div class="col-md-2"><label class="form-label fw-semibold small">Weight (kg)</label><input type="text" name="weight" class="form-control"></div>
+<div class="col-md-2"><label class="form-label fw-semibold small">O2 Sat (%)</label><input type="text" name="oxygen_saturation" class="form-control"></div>
+<div class="col-12"><label class="form-label fw-semibold">Additional Notes</label><textarea name="notes" class="form-control" rows="2"></textarea></div>
+<div class="col-12">
+<button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>Save Record</button>
+<a href="{% url 'patient_detail' patient.pk %}" class="btn btn-outline-secondary ms-2">Cancel</a>
+</div>
+</div>
+</form>
+</div>
+</div>
+{% endblock %}

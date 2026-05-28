@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block title %}Stock In{% endblock %}
+{% block page_title %}Stock In{% endblock %}
+{% block content %}
+<div class="row"><div class="col-md-5">
+<div class="card">
+<div class="card-header py-3 px-4"><i class="fas fa-plus-circle me-2 text-success"></i>Add Stock: {{ medicine.name }}</div>
+<div class="card-body p-4">
+<div class="alert alert-info small mb-3">Current stock: <strong>{{ medicine.stock_quantity }} {{ medicine.unit }}</strong></div>
+<form method="post">{% csrf_token %}
+<div class="mb-3"><label class="form-label fw-semibold">Quantity to Add *</label><input type="number" name="quantity" class="form-control" min="1" required></div>
+<div class="mb-3"><label class="form-label fw-semibold">Unit Price</label><input type="number" name="unit_price" class="form-control" step="0.01" value="{{ medicine.unit_price }}"></div>
+<div class="mb-3"><label class="form-label fw-semibold">Reference / Invoice #</label><input type="text" name="reference" class="form-control"></div>
+<div class="mb-3"><label class="form-label fw-semibold">Notes</label><textarea name="notes" class="form-control" rows="2"></textarea></div>
+<button type="submit" class="btn btn-success w-100"><i class="fas fa-check me-1"></i>Confirm Stock In</button>
+</form>
+</div>
+</div>
+</div></div>
+{% endblock %}

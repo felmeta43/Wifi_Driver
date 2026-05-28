@@ -1,0 +1,158 @@
+{% extends 'base.html' %}
+{% block title %}{{ patient.get_full_name }}{% endblock %}
+{% block page_title %}Patient Profile{% endblock %}
+{% block content %}
+<div class="row g-3">
+<div class="col-md-4">
+<div class="card mb-3">
+<div class="card-body p-4 text-center">
+    <div style="width:80px;height:80px;background:#e8f4fd;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:700;color:var(--primary);margin:0 auto 1rem;">
+        {{ patient.first_name|first }}{{ patient.last_name|first }}
+    </div>
+    <h5 class="fw-bold">{{ patient.get_full_name }}</h5>
+    <p class="text-muted small mb-1">{{ patient.patient_id }}</p>
+    <span class="badge {% if patient.status == 'active' %}bg-success{% else %}bg-secondary{% endif %}">{{ patient.get_status_display }}</span>
+    {% if patient.blood_group %}<span class="badge bg-danger ms-1">{{ patient.blood_group }}</span>{% endif %}
+    <div class="mt-3 d-flex gap-2 justify-content-center">
+        <a href="{% url 'patient_edit' patient.pk %}" class="btn btn-sm btn-primary"><i class="fas fa-edit me-1"></i>Edit</a>
+        <a href="{% url 'appointment_create' %}?patient={{ patient.pk }}" class="btn btn-sm btn-outline-primary"><i class="fas fa-calendar-plus me-1"></i>Book</a>
+    </div>
+</div>
+</div>
+<div class="card mb-3">
+<div class="card-header py-3 px-4">Personal Info</div>
+<div class="card-body px-4 py-2">
+<div class="py-2 border-bottom"><div class="text-muted small">Age</div><div class="fw-semibold">{{ patient.get_age }} years</div></div>
+<div class="py-2 border-bottom"><div class="text-muted small">Gender</div><div class="fw-semibold">{{ patient.get_gender_display }}</div></div>
+<div class="py-2 border-bottom"><div class="text-muted small">Date of Birth</div><div class="fw-semibold">{{ patient.date_of_birth|date:"M d, Y" }}</div></div>
+<div class="py-2 border-bottom"><div class="text-muted small">Phone</div><div class="fw-semibold">{{ patient.phone }}</div></div>
+<div class="py-2 border-bottom"><div class="text-muted small">Email</div><div class="fw-semibold">{{ patient.email|default:"-" }}</div></div>
+<div class="py-2"><div class="text-muted small">Address</div><div class="fw-semibold">{{ patient.address }}</div></div>
+</div>
+</div>
+{% if patient.allergies or patient.chronic_conditions %}
+<div class="card">
+<div class="card-header py-3 px-4 text-danger"><i class="fas fa-exclamation-triangle me-1"></i>Medical Alerts</div>
+<div class="card-body px-4 py-2">
+{% if patient.allergies %}<div class="py-2 border-bottom"><div class="text-muted small">Allergies</div><div class="fw-semibold text-danger">{{ patient.allergies }}</div></div>{% endif %}
+{% if patient.chronic_conditions %}<div class="py-2"><div class="text-muted small">Chronic Conditions</div><div class="fw-semibold">{{ patient.chronic_conditions }}</div></div>{% endif %}
+</div>
+</div>
+{% endif %}
+</div>
+
+<div class="col-md-8">
+<ul class="nav nav-tabs mb-3" id="patientTabs">
+    <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#records">Medical Records</a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#appointments">Appointments</a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#invoices">Billing</a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#lab">Lab Orders</a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#rx">Prescriptions</a></li>
+</ul>
+<div class="tab-content">
+<div class="tab-pane fade show active" id="records">
+<div class="d-flex justify-content-end mb-2">
+<a href="{% url 'medical_record_create' patient.pk %}" class="btn btn-sm btn-primary"><i class="fas fa-plus me-1"></i>Add Record</a>
+</div>
+{% for record in medical_records %}
+<div class="card mb-2">
+<div class="card-body p-3">
+<div class="d-flex justify-content-between mb-2">
+<span class="fw-semibold">Dr. {{ record.doctor.user.get_full_name }}</span>
+<span class="text-muted small">{{ record.visit_date|date:"M d, Y" }}</span>
+</div>
+<div class="row g-2 small">
+<div class="col-6"><div class="text-muted">Complaint</div>{{ record.chief_complaint }}</div>
+<div class="col-6"><div class="text-muted">Diagnosis</div>{{ record.diagnosis }}</div>
+{% if record.vital_signs %}<div class="col-12"><div class="text-muted">Vitals</div>
+{% for k,v in record.vital_signs.items %}{% if v %}<span class="badge bg-light text-dark me-1">{{ k|title }}: {{ v }}</span>{% endif %}{% endfor %}
+</div>{% endif %}
+</div>
+</div>
+</div>
+{% empty %}
+<p class="text-muted text-center py-4">No medical records yet.</p>
+{% endfor %}
+</div>
+
+<div class="tab-pane fade" id="appointments">
+<div class="d-flex justify-content-end mb-2">
+<a href="{% url 'appointment_create' %}" class="btn btn-sm btn-primary"><i class="fas fa-calendar-plus me-1"></i>Book Appointment</a>
+</div>
+<div class="table-responsive">
+<table class="table table-sm">
+<thead><tr><th>ID</th><th>Doctor</th><th>Date</th><th>Type</th><th>Status</th></tr></thead>
+<tbody>
+{% for apt in appointments %}
+<tr>
+<td><a href="{% url 'appointment_detail' apt.pk %}">{{ apt.appointment_id }}</a></td>
+<td>{{ apt.doctor.get_full_name }}</td>
+<td>{{ apt.appointment_date|date:"M d" }} {{ apt.appointment_time|time:"H:i" }}</td>
+<td>{{ apt.get_appointment_type_display }}</td>
+<td><span class="badge badge-status-{{ apt.status }}">{{ apt.get_status_display }}</span></td>
+</tr>
+{% empty %}<tr><td colspan="5" class="text-center text-muted">No appointments</td></tr>{% endfor %}
+</tbody>
+</table>
+</div>
+</div>
+
+<div class="tab-pane fade" id="invoices">
+<div class="d-flex justify-content-end mb-2">
+<a href="{% url 'invoice_create' %}" class="btn btn-sm btn-primary"><i class="fas fa-file-invoice me-1"></i>New Invoice</a>
+</div>
+<div class="table-responsive">
+<table class="table table-sm">
+<thead><tr><th>Invoice #</th><th>Date</th><th>Total</th><th>Paid</th><th>Status</th></tr></thead>
+<tbody>
+{% for inv in invoices %}
+<tr>
+<td><a href="{% url 'invoice_detail' inv.pk %}">{{ inv.invoice_number }}</a></td>
+<td>{{ inv.created_at|date:"M d, Y" }}</td>
+<td>{{ hospital.currency_symbol }}{{ inv.total_amount }}</td>
+<td>{{ hospital.currency_symbol }}{{ inv.paid_amount }}</td>
+<td><span class="badge {% if inv.status == 'paid' %}bg-success{% elif inv.status == 'pending' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">{{ inv.get_status_display }}</span></td>
+</tr>
+{% empty %}<tr><td colspan="5" class="text-center text-muted">No invoices</td></tr>{% endfor %}
+</tbody>
+</table>
+</div>
+</div>
+
+<div class="tab-pane fade" id="lab">
+<div class="d-flex justify-content-end mb-2">
+<a href="{% url 'lab_order_create' %}" class="btn btn-sm btn-primary"><i class="fas fa-flask me-1"></i>New Lab Order</a>
+</div>
+{% for order in lab_orders %}
+<div class="card mb-2">
+<div class="card-body p-3">
+<div class="d-flex justify-content-between">
+<a href="{% url 'lab_order_detail' order.pk %}" class="fw-semibold text-decoration-none">{{ order.order_id }}</a>
+<span class="badge {% if order.status == 'completed' %}bg-success{% else %}bg-warning text-dark{% endif %}">{{ order.get_status_display }}</span>
+</div>
+<div class="text-muted small">{{ order.ordered_at|date:"M d, Y" }}</div>
+</div>
+</div>
+{% empty %}<p class="text-muted text-center py-4">No lab orders</p>{% endfor %}
+</div>
+
+<div class="tab-pane fade" id="rx">
+<div class="d-flex justify-content-end mb-2">
+<a href="{% url 'prescription_create' %}" class="btn btn-sm btn-primary"><i class="fas fa-prescription me-1"></i>New Prescription</a>
+</div>
+{% for rx in prescriptions %}
+<div class="card mb-2">
+<div class="card-body p-3">
+<div class="d-flex justify-content-between">
+<a href="{% url 'prescription_detail' rx.pk %}" class="fw-semibold text-decoration-none">{{ rx.prescription_id }}</a>
+<span class="badge {% if rx.status == 'dispensed' %}bg-success{% else %}bg-warning text-dark{% endif %}">{{ rx.get_status_display }}</span>
+</div>
+<div class="text-muted small">{{ rx.created_at|date:"M d, Y" }} &bull; Dr. {{ rx.doctor.user.get_full_name }}</div>
+</div>
+</div>
+{% empty %}<p class="text-muted text-center py-4">No prescriptions</p>{% endfor %}
+</div>
+</div>
+</div>
+</div>
+{% endblock %}

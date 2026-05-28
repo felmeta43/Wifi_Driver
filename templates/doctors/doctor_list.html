@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block title %}Doctors{% endblock %}
+{% block page_title %}Doctors{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+<h5 class="mb-0 fw-semibold">Medical Staff</h5>
+<div class="d-flex gap-2">
+<a href="{% url 'specialization_list' %}" class="btn btn-outline-primary btn-sm">Specializations</a>
+<a href="{% url 'doctor_create' %}" class="btn btn-primary btn-sm"><i class="fas fa-user-md me-1"></i>Add Doctor</a>
+</div>
+</div>
+<form method="get" class="row g-2 mb-3">
+<div class="col-md-5"><div class="search-box"><i class="fas fa-search text-muted"></i><input type="text" name="q" value="{{ query }}" placeholder="Search doctors..."></div></div>
+<div class="col-md-3"><select name="department" class="form-select form-select-sm">
+<option value="">All Departments</option>
+{% for dept in departments %}<option value="{{ dept.pk }}" {% if selected_dept == dept.pk|stringformat:"s" %}selected{% endif %}>{{ dept.name }}</option>{% endfor %}
+</select></div>
+<div class="col-md-2"><button type="submit" class="btn btn-primary btn-sm w-100">Filter</button></div>
+</form>
+<div class="row g-3">
+{% for doctor in doctors %}
+<div class="col-md-4 col-lg-3">
+<div class="card text-center p-3">
+<div style="width:72px;height:72px;background:#e8f4fd;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.8rem;font-weight:700;color:var(--primary);margin:0 auto 1rem;">
+{{ doctor.user.first_name|first }}{{ doctor.user.last_name|first }}
+</div>
+<h6 class="fw-bold mb-1">Dr. {{ doctor.user.get_full_name }}</h6>
+<p class="text-primary small mb-1 fw-semibold">{{ doctor.specialization }}</p>
+<p class="text-muted small mb-2">{{ doctor.department.name|default:"General" }}</p>
+<div class="mb-2">
+<span class="badge {% if doctor.status == 'active' %}bg-success{% else %}bg-warning text-dark{% endif %}">{{ doctor.get_status_display }}</span>
+</div>
+<div class="text-muted small mb-3">{{ doctor.experience_years }} years exp. &bull; {{ hospital.currency_symbol }}{{ doctor.consultation_fee }}/visit</div>
+<a href="{% url 'doctor_detail' doctor.pk %}" class="btn btn-sm btn-outline-primary w-100">View Profile</a>
+</div>
+</div>
+{% empty %}
+<div class="col-12 text-center text-muted py-5">No doctors found.</div>
+{% endfor %}
+</div>
+{% endblock %}

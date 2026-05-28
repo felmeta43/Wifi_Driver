@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% block title %}Staff Management{% endblock %}
+{% block page_title %}Staff Management{% endblock %}
+{% block content %}
+<div class="card">
+<div class="card-header py-3 px-4 d-flex justify-content-between align-items-center">
+<span><i class="fas fa-users-cog me-2 text-primary"></i>System Users</span>
+<a href="{% url 'user_create' %}" class="btn btn-primary btn-sm"><i class="fas fa-user-plus me-1"></i>Add User</a>
+</div>
+<div class="card-body border-bottom px-4 py-3">
+<form method="get" class="row g-2">
+<div class="col-md-5"><div class="search-box"><i class="fas fa-search text-muted"></i><input type="text" name="q" value="{{ query }}" placeholder="Search users..."></div></div>
+<div class="col-md-2"><button type="submit" class="btn btn-primary btn-sm w-100">Search</button></div>
+<div class="col-md-2"><a href="{% url 'user_list' %}" class="btn btn-outline-secondary btn-sm w-100">Clear</a></div>
+</form>
+</div>
+<div class="table-responsive">
+<table class="table table-hover mb-0">
+<thead><tr>
+<th class="ps-4">Name</th><th>Username</th><th>Role</th><th>Email</th><th>Phone</th><th>Status</th><th class="pe-4">Actions</th>
+</tr></thead>
+<tbody>
+{% for u in users %}
+<tr>
+<td class="ps-4">
+    <div class="d-flex align-items-center gap-2">
+        <div style="width:34px;height:34px;border-radius:50%;background:#e8f4fd;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.8rem;color:var(--primary);overflow:hidden;flex-shrink:0;">
+            {% if u.profile_picture %}<img src="{{ u.profile_picture.url }}" style="width:100%;height:100%;object-fit:cover;">
+            {% else %}{{ u.first_name|first|upper }}{{ u.last_name|first|upper }}{% endif %}
+        </div>
+        <div class="fw-semibold">{{ u.get_full_name|default:u.username }}</div>
+    </div>
+</td>
+<td class="text-muted small">{{ u.username }}</td>
+<td><span class="badge bg-primary-subtle text-primary">{{ u.get_role_display }}</span></td>
+<td class="text-muted small">{{ u.email|default:"-" }}</td>
+<td class="text-muted small">{{ u.phone|default:"-" }}</td>
+<td><span class="badge {% if u.is_active %}bg-success{% else %}bg-secondary{% endif %}">{% if u.is_active %}Active{% else %}Inactive{% endif %}</span></td>
+<td class="pe-4">
+<a href="{% url 'user_edit' u.pk %}" class="btn btn-sm btn-outline-primary"><i class="fas fa-edit"></i></a>
+</td>
+</tr>
+{% empty %}
+<tr><td colspan="7" class="text-center text-muted py-5">No users found.</td></tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+</div>
+{% endblock %}

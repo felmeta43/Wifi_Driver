@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+{% block title %}Create Invoice{% endblock %}
+{% block page_title %}Create Invoice{% endblock %}
+{% block content %}
+<div class="card">
+<div class="card-header py-3 px-4"><i class="fas fa-file-invoice me-2 text-primary"></i>New Invoice</div>
+<div class="card-body p-4">
+<form method="post">{% csrf_token %}
+<div class="row g-3 mb-4">
+<div class="col-md-6"><label class="form-label fw-semibold">Patient *</label>
+<select name="patient" class="form-select" required>
+<option value="">-- Select Patient --</option>
+{% for p in patients %}<option value="{{ p.pk }}">{{ p.get_full_name }} ({{ p.patient_id }})</option>{% endfor %}
+</select></div>
+<div class="col-md-6"><label class="form-label fw-semibold">Appointment (Optional)</label>
+<select name="appointment" class="form-select">
+<option value="">-- Select --</option>
+{% for apt in appointments %}<option value="{{ apt.pk }}">{{ apt.appointment_id }} - {{ apt.patient.get_full_name }} ({{ apt.appointment_date }})</option>{% endfor %}
+</select></div>
+<div class="col-md-4"><label class="form-label fw-semibold">Due Date</label><input type="date" name="due_date" class="form-control"></div>
+</div>
+
+<h6 class="fw-bold border-bottom pb-2 mb-3">Invoice Items</h6>
+<div id="items-container">
+<div class="row g-2 mb-2 item-row">
+<div class="col-md-4"><input type="text" name="description" class="form-control form-control-sm" placeholder="Description" required></div>
+<div class="col-md-2">
+<select name="category" class="form-select form-select-sm">
+{% for val, label in item_categories %}<option value="{{ val }}">{{ label }}</option>{% endfor %}
+</select></div>
+<div class="col-md-2"><input type="number" name="quantity" class="form-control form-control-sm qty" placeholder="Qty" value="1" step="0.01" min="0.01" required></div>
+<div class="col-md-2"><input type="number" name="unit_price" class="form-control form-control-sm price" placeholder="Unit Price" step="0.01" min="0" required></div>
+<div class="col-md-2"><button type="button" class="btn btn-sm btn-outline-danger w-100" onclick="removeRow(this)"><i class="fas fa-trash"></i></button></div>
+</div>
+</div>
+<button type="button" class="btn btn-sm btn-outline-primary mt-2" onclick="addRow()"><i class="fas fa-plus me-1"></i>Add Item</button>
+
+<div class="row mt-4">
+<div class="col-md-4 ms-auto">
+<div class="card p-3 bg-light">
+<div class="d-flex justify-content-between mb-2"><span>Subtotal:</span><span id="subtotal">{{ hospital.currency_symbol }}0.00</span></div>
+<div class="mb-2"><label class="form-label small fw-semibold">Discount ({{ hospital.currency_symbol }})</label>
+<input type="number" name="discount_amount" id="discount" class="form-control form-control-sm" value="0" step="0.01" min="0"></div>
+<div class="d-flex justify-content-between fw-bold border-top pt-2"><span>Estimated Total:</span><span id="total">{{ hospital.currency_symbol }}0.00</span></div>
+</div>
+</div>
+</div>
+<div class="mb-3 mt-3"><label class="form-label fw-semibold">Notes</label><textarea name="notes" class="form-control" rows="2"></textarea></div>
+<button type="submit" class="btn btn-primary px-4"><i class="fas fa-save me-1"></i>Create Invoice</button>
+<a href="{% url 'invoice_list' %}" class="btn btn-outline-secondary ms-2">Cancel</a>
+</form>
+</div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+const currency = '{{ hospital.currency_symbol }}';
+const taxPct = {{ hospital.tax_percentage }};
+function addRow() {
+    const container = document.getElementById('items-container');
+    const row = container.querySelector('.item-row').cloneNode(true);
+    row.querySelectorAll('input').forEach(i => i.value = i.name === 'quantity' ? '1' : '');
+    container.appendChild(row);
+}
+function removeRow(btn) {
+    const rows = document.querySelectorAll('.item-row');
+    if (rows.length > 1) btn.closest('.item-row').remove();
+    updateTotal();
+}
+function updateTotal() {
+    let sub = 0;
+    document.querySelectorAll('.item-row').forEach(row => {
+        const qty = parseFloat(row.querySelector('.qty').value) || 0;
+        const price = parseFloat(row.querySelector('.price').value) || 0;
+        sub += qty * price;
+    });
+    const disc = parseFloat(document.getElementById('discount').value) || 0;
+    const tax = (sub - disc) * taxPct / 100;
+    document.getElementById('subtotal').textContent = currency + sub.toFixed(2);
+    document.getElementById('total').textContent = currency + (sub - disc + tax).toFixed(2);
+}
+document.getElementById('items-container').addEventListener('input', updateTotal);
+document.getElementById('discount').addEventListener('input', updateTotal);
+</script>
+{% endblock %}

@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block title %}Billing Reports{% endblock %}
+{% block page_title %}Billing Reports{% endblock %}
+{% block content %}
+<div class="row g-3 mb-4">
+<div class="col-md-4"><div class="card p-4" style="background:linear-gradient(135deg,#43e97b,#38f9d7);">
+<div class="text-white small">Total Revenue</div><div class="h3 fw-bold text-white">{{ hospital.currency_symbol }}{{ total_revenue|floatformat:2 }}</div>
+</div></div>
+<div class="col-md-4"><div class="card p-4" style="background:linear-gradient(135deg,#f093fb,#f5576c);">
+<div class="text-white small">Pending Amount</div><div class="h3 fw-bold text-white">{{ hospital.currency_symbol }}{{ total_pending|floatformat:2 }}</div>
+</div></div>
+</div>
+<div class="row g-3">
+<div class="col-md-8">
+<div class="card">
+<div class="card-header py-3 px-4">Monthly Revenue ({{ request.session.current_year|default:"This Year" }})</div>
+<div class="card-body"><canvas id="monthlyChart" height="80"></canvas></div>
+</div>
+</div>
+<div class="col-md-4">
+<div class="card">
+<div class="card-header py-3 px-4">Payment Methods</div>
+<div class="card-body">
+{% for pm in payment_methods %}
+<div class="d-flex justify-content-between align-items-center mb-2">
+<span class="text-muted small">{{ pm.method|title }}</span>
+<span class="fw-semibold">{{ hospital.currency_symbol }}{{ pm.total|floatformat:2 }}</span>
+</div>
+{% empty %}<p class="text-muted text-center">No data</p>{% endfor %}
+</div>
+</div>
+</div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+const data = [{% for m in monthly %}{'month':'{{ m.month|date:"M" }}','total':{{ m.total }}}{% if not forloop.last %},{% endif %}{% endfor %}];
+new Chart(document.getElementById('monthlyChart'), {
+    type: 'bar',
+    data: {
+        labels: data.map(d => d.month),
+        datasets: [{ label: 'Revenue', data: data.map(d => d.total), backgroundColor: '#0d6efd99', borderColor: '#0d6efd', borderWidth: 2, borderRadius: 6 }]
+    },
+    options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+});
+</script>
+{% endblock %}

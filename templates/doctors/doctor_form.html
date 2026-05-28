@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% block title %}{{ action }} Doctor{% endblock %}
+{% block page_title %}{{ action }} Doctor{% endblock %}
+{% block content %}
+<div class="card">
+<div class="card-header py-3 px-4"><i class="fas fa-user-md me-2 text-primary"></i>Doctor Information</div>
+<div class="card-body p-4">
+<form method="post">{% csrf_token %}
+{% if action == 'Add' %}
+<h6 class="fw-bold text-muted mb-3 border-bottom pb-2">Login Credentials</h6>
+<div class="row g-3 mb-4">
+<div class="col-md-4"><label class="form-label fw-semibold">Username *</label><input type="text" name="username" class="form-control" required></div>
+<div class="col-md-4"><label class="form-label fw-semibold">Password *</label><input type="password" name="password" class="form-control" required></div>
+</div>
+{% endif %}
+<h6 class="fw-bold text-muted mb-3 border-bottom pb-2">Personal Details</h6>
+<div class="row g-3 mb-4">
+<div class="col-md-4"><label class="form-label fw-semibold">First Name *</label><input type="text" name="first_name" class="form-control" value="{{ doctor.user.first_name }}" required></div>
+<div class="col-md-4"><label class="form-label fw-semibold">Last Name *</label><input type="text" name="last_name" class="form-control" value="{{ doctor.user.last_name }}" required></div>
+<div class="col-md-4"><label class="form-label fw-semibold">Gender</label>
+<select name="gender" class="form-select">
+{% for val, label in genders %}<option value="{{ val }}" {% if doctor.gender == val %}selected{% endif %}>{{ label }}</option>{% endfor %}
+</select></div>
+<div class="col-md-4"><label class="form-label fw-semibold">Phone</label><input type="text" name="phone" class="form-control" value="{{ doctor.user.phone }}"></div>
+<div class="col-md-4"><label class="form-label fw-semibold">Email</label><input type="email" name="email" class="form-control" value="{{ doctor.user.email }}"></div>
+<div class="col-md-4"><label class="form-label fw-semibold">Date of Birth</label><input type="date" name="date_of_birth" class="form-control" value="{{ doctor.date_of_birth|date:'Y-m-d' }}"></div>
+</div>
+<h6 class="fw-bold text-muted mb-3 border-bottom pb-2">Professional Details</h6>
+<div class="row g-3 mb-4">
+<div class="col-md-6"><label class="form-label fw-semibold">Specialization *</label>
+<select name="specialization" class="form-select" required>
+<option value="">-- Select --</option>
+{% for spec in specializations %}<option value="{{ spec.pk }}" {% if doctor.specialization.pk == spec.pk %}selected{% endif %}>{{ spec.name }}</option>{% endfor %}
+</select></div>
+<div class="col-md-6"><label class="form-label fw-semibold">Department</label>
+<select name="department" class="form-select">
+<option value="">-- Select --</option>
+{% for dept in departments %}<option value="{{ dept.pk }}" {% if doctor.department.pk == dept.pk %}selected{% endif %}>{{ dept.name }}</option>{% endfor %}
+</select></div>
+<div class="col-md-6"><label class="form-label fw-semibold">Qualification</label><input type="text" name="qualification" class="form-control" value="{{ doctor.qualification }}" placeholder="e.g. MBBS, MD, PhD"></div>
+<div class="col-md-3"><label class="form-label fw-semibold">Experience (years)</label><input type="number" name="experience_years" class="form-control" value="{{ doctor.experience_years|default:0 }}"></div>
+<div class="col-md-3"><label class="form-label fw-semibold">Consultation Fee</label><input type="number" name="consultation_fee" class="form-control" step="0.01" value="{{ doctor.consultation_fee|default:0 }}"></div>
+<div class="col-12"><label class="form-label fw-semibold">Bio / About</label><textarea name="bio" class="form-control" rows="3">{{ doctor.bio }}</textarea></div>
+{% if action == 'Edit' %}
+<div class="col-md-4"><label class="form-label fw-semibold">Status</label>
+<select name="status" class="form-select">
+<option value="active" {% if doctor.status == 'active' %}selected{% endif %}>Active</option>
+<option value="on_leave" {% if doctor.status == 'on_leave' %}selected{% endif %}>On Leave</option>
+<option value="inactive" {% if doctor.status == 'inactive' %}selected{% endif %}>Inactive</option>
+</select></div>
+{% endif %}
+</div>
+<div class="d-flex gap-2">
+<button type="submit" class="btn btn-primary px-4"><i class="fas fa-save me-1"></i>{{ action }} Doctor</button>
+<a href="{% url 'doctor_list' %}" class="btn btn-outline-secondary">Cancel</a>
+</div>
+</form>
+</div>
+</div>
+{% endblock %}
