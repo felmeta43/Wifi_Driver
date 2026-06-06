@@ -172,6 +172,9 @@ def instant_service(request):
     services = Service.objects.filter(is_active=True).order_by('name')
     recent = InstantService.objects.select_related('patient', 'service').order_by('-created_at')[:20]
     if request.method == 'POST':
+        if request.user.role not in ('admin', 'cashier') and not request.user.is_superuser:
+            messages.error(request, 'Only cashiers can process instant service payments.')
+            return redirect('instant_service')
         d = request.POST
         patient = get_object_or_404(Patient, pk=d['patient'])
         svc = get_object_or_404(Service, pk=d['service'])

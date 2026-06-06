@@ -84,8 +84,9 @@
 </div>
 </div>
 {% if invoice.status != 'paid' and invoice.status != 'cancelled' %}
+{% if user.role == 'admin' or user.role == 'cashier' or user.is_superuser %}
 <div class="card">
-<div class="card-header py-3 px-4">Record Payment</div>
+<div class="card-header py-3 px-4"><i class="fas fa-cash-register me-2 text-success"></i>Record Payment</div>
 <div class="card-body p-3">
 <form method="post" action="{% url 'add_payment' invoice.pk %}">{% csrf_token %}
 <div class="mb-2"><label class="form-label small fw-semibold">Amount *</label>
@@ -103,6 +104,15 @@
 </form>
 </div>
 </div>
+{% else %}
+<div class="card border-warning">
+<div class="card-body p-3 text-center">
+  <i class="fas fa-cash-register fa-2x text-warning mb-2 d-block"></i>
+  <div class="fw-semibold mb-1">Balance Due: {{ hospital.currency_symbol }}{{ invoice.get_balance }}</div>
+  <p class="text-muted small mb-0">Please direct the patient to the <strong>Cashier Desk</strong> to complete payment.</p>
+</div>
+</div>
+{% endif %}
 {% endif %}
 </div>
 </div>

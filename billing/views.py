@@ -105,10 +105,17 @@ def invoice_create(request):
     })
 
 
+def _can_receive_payment(user):
+    return user.role in ('admin', 'cashier') or user.is_superuser
+
+
 @login_required
 def add_payment(request, invoice_pk):
     invoice = get_object_or_404(Invoice, pk=invoice_pk)
     if request.method == 'POST':
+        if not _can_receive_payment(request.user):
+            messages.error(request, 'Only cashiers can record payments. Please direct the patient to the cashier desk.')
+            return redirect('invoice_detail', pk=invoice_pk)
         amount = float(request.POST.get('amount', 0))
         method = request.POST.get('method', 'cash')
         reference = request.POST.get('reference', '')

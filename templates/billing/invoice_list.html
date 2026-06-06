@@ -15,7 +15,7 @@
 <span><i class="fas fa-file-invoice-dollar me-2 text-primary"></i>Invoices</span>
 <div class="d-flex gap-2">
 <a href="{% url 'billing_reports' %}" class="btn btn-outline-primary btn-sm">Reports</a>
-<a href="{% url 'invoice_create' %}" class="btn btn-primary btn-sm"><i class="fas fa-plus me-1"></i>New Invoice</a>
+{% if user.role == 'admin' or user.role == 'cashier' or user.role == 'receptionist' or user.is_superuser %}<a href="{% url 'invoice_create' %}" class="btn btn-primary btn-sm"><i class="fas fa-plus me-1"></i>New Invoice</a>{% endif %}
 </div>
 </div>
 <div class="card-body border-bottom px-4 py-3">

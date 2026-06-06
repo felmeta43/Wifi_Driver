@@ -5,8 +5,9 @@
 <div class="row g-3">
 <div class="col-md-5">
 <div class="card">
-<div class="card-header py-3 px-4"><i class="fas fa-bolt me-2 text-warning"></i>Quick Service</div>
+<div class="card-header py-3 px-4"><i class="fas fa-cash-register me-2 text-warning"></i>Quick Service — Cashier</div>
 <div class="card-body p-4">
+{% if user.role == 'admin' or user.role == 'cashier' or user.is_superuser %}
 <form method="post">{% csrf_token %}
 <div class="mb-3"><label class="form-label fw-semibold">Patient *</label>
 <select name="patient" class="form-select" required>
@@ -29,6 +30,13 @@
 <div class="mb-3"><label class="form-label fw-semibold">Notes</label><textarea name="notes" class="form-control" rows="2"></textarea></div>
 <button type="submit" class="btn btn-warning text-white w-100 fw-semibold"><i class="fas fa-bolt me-1"></i>Issue Service</button>
 </form>
+{% else %}
+<div class="text-center py-4">
+  <i class="fas fa-lock fa-3x text-muted mb-3 d-block"></i>
+  <div class="fw-semibold mb-1">Cashier Access Required</div>
+  <p class="text-muted small">Only cashiers can process instant service payments.</p>
+</div>
+{% endif %}
 </div>
 </div>
 </div>

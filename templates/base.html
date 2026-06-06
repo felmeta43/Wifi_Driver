@@ -196,19 +196,26 @@
         </a>
         {% endif %}
 
-        {# ── Services & Finance — front-desk + accountant ──────────────── #}
-        {% if r == 'admin' or r == 'receptionist' or r == 'accountant' or su %}
+        {# ── Services & Finance ────────────────────────────────────────── #}
+        {# cashier: full access + takes payments                          #}
+        {# receptionist: creates invoices + service orders, no payment   #}
+        {# accountant: read-only invoices + reports                      #}
+        {% if r == 'admin' or r == 'cashier' or r == 'receptionist' or r == 'accountant' or su %}
         <div class="nav-label">Services &amp; Finance</div>
+        {% if r == 'admin' or r == 'cashier' or r == 'receptionist' or su %}
         <a href="{% url 'service_list' %}" class="nav-link {% if 'service' in request.resolver_match.url_name %}active{% endif %}">
             <i class="fas fa-concierge-bell"></i> Services
         </a>
+        {% endif %}
+        {% if r == 'admin' or r == 'cashier' or su %}
         <a href="{% url 'instant_service' %}" class="nav-link {% if request.resolver_match.url_name == 'instant_service' %}active{% endif %}">
             <i class="fas fa-bolt"></i> Instant Service
         </a>
+        {% endif %}
         <a href="{% url 'invoice_list' %}" class="nav-link {% if 'invoice' in request.resolver_match.url_name %}active{% endif %}">
             <i class="fas fa-file-invoice-dollar"></i> Invoices
         </a>
-        {% if r == 'admin' or r == 'accountant' or su %}
+        {% if r == 'admin' or r == 'cashier' or r == 'accountant' or su %}
         <a href="{% url 'billing_reports' %}" class="nav-link">
             <i class="fas fa-chart-bar"></i> Reports
         </a>
