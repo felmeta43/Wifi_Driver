@@ -11,6 +11,7 @@ class User(AbstractUser):
         ('pharmacist', 'Pharmacist'),
         ('lab_technician', 'Lab Technician'),
         ('cashier', 'Cashier'),
+        ('finance_head', 'Finance Head'),
         ('accountant', 'Accountant'),
         ('patient', 'Patient'),
     ]

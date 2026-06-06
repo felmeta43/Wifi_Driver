@@ -83,3 +83,53 @@ class Payment(models.Model):
 
     def __str__(self):
         return f"Payment of {self.amount} for {self.invoice}"
+
+
+class DailyCollection(models.Model):
+    STATUS_CHOICES = [
+        ('draft', 'Draft'),
+        ('submitted', 'Submitted — Pending Approval'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+    ]
+
+    cashier = models.ForeignKey(
+        'accounts.User', on_delete=models.CASCADE,
+        related_name='daily_collections', limit_choices_to={'role': 'cashier'}
+    )
+    collection_date = models.DateField()
+    status = models.CharField(max_length=15, choices=STATUS_CHOICES, default='draft')
+
+    # Breakdown by payment method (auto-populated from Payment records)
+    cash_total = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    card_total = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    insurance_total = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    mobile_money_total = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    bank_transfer_total = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    check_total = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    instant_service_total = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    total_collected = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    transaction_count = models.IntegerField(default=0)
+
+    notes = models.TextField(blank=True)
+    submitted_at = models.DateTimeField(null=True, blank=True)
+
+    reviewed_by = models.ForeignKey(
+        'accounts.User', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='reviewed_collections'
+    )
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    rejection_reason = models.TextField(blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('cashier', 'collection_date')
+        ordering = ['-collection_date', 'cashier']
+
+    def __str__(self):
+        return f"{self.cashier.get_full_name()} – {self.collection_date} ({self.get_status_display()})"
+
+    def is_pending(self):
+        return self.status in ('draft', 'submitted')

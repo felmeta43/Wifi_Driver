@@ -16,9 +16,9 @@
         * { font-family: 'Inter', sans-serif; }
         body { background: #f0f2f5; }
         .sidebar {
-            width: 260px; min-height: 100vh; background: linear-gradient(180deg, #1a2035 0%, #1d2848 100%);
+            width: 260px; height: 100vh; background: linear-gradient(180deg, #1a2035 0%, #1d2848 100%);
             position: fixed; top: 0; left: 0; z-index: 1000; transition: all 0.3s;
-            display: flex; flex-direction: column;
+            display: flex; flex-direction: column; overflow: hidden;
         }
         .sidebar .brand {
             padding: 1.5rem 1.2rem; border-bottom: 1px solid rgba(255,255,255,0.08);
@@ -27,7 +27,11 @@
         .sidebar .brand img { width: 40px; height: 40px; object-fit: cover; border-radius: 8px; }
         .sidebar .brand-text { color: white; font-weight: 700; font-size: 0.95rem; line-height: 1.2; }
         .sidebar .brand-text small { font-weight: 300; font-size: 0.72rem; color: rgba(255,255,255,0.6); }
-        .sidebar nav { flex: 1; padding: 1rem 0.75rem; overflow-y: auto; }
+        .sidebar nav { flex: 1; padding: 1rem 0.75rem; overflow-y: auto; min-height: 0; }
+        .sidebar nav::-webkit-scrollbar { width: 4px; }
+        .sidebar nav::-webkit-scrollbar-track { background: transparent; }
+        .sidebar nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 4px; }
+        .sidebar nav::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.3); }
         .sidebar .nav-label {
             font-size: 0.65rem; font-weight: 600; color: rgba(255,255,255,0.35);
             text-transform: uppercase; letter-spacing: 0.08em;
@@ -200,7 +204,7 @@
         {# cashier: full access + takes payments                          #}
         {# receptionist: creates invoices + service orders, no payment   #}
         {# accountant: read-only invoices + reports                      #}
-        {% if r == 'admin' or r == 'cashier' or r == 'receptionist' or r == 'accountant' or su %}
+        {% if r == 'admin' or r == 'cashier' or r == 'receptionist' or r == 'accountant' or r == 'finance_head' or su %}
         <div class="nav-label">Services &amp; Finance</div>
         {% if r == 'admin' or r == 'cashier' or r == 'receptionist' or su %}
         <a href="{% url 'service_list' %}" class="nav-link {% if 'service' in request.resolver_match.url_name %}active{% endif %}">
@@ -215,11 +219,36 @@
         <a href="{% url 'invoice_list' %}" class="nav-link {% if 'invoice' in request.resolver_match.url_name %}active{% endif %}">
             <i class="fas fa-file-invoice-dollar"></i> Invoices
         </a>
-        {% if r == 'admin' or r == 'cashier' or r == 'accountant' or su %}
+        {% if r == 'admin' or r == 'cashier' or r == 'accountant' or r == 'finance_head' or su %}
         <a href="{% url 'billing_reports' %}" class="nav-link">
             <i class="fas fa-chart-bar"></i> Reports
         </a>
         {% endif %}
+        {% if r == 'cashier' or su %}
+        <a href="{% url 'daily_collection_submit' %}" class="nav-link {% if request.resolver_match.url_name == 'daily_collection_submit' %}active{% endif %} d-flex align-items-center justify-content-between">
+            <span><i class="fas fa-cash-register me-2" style="width:18px;text-align:center;"></i>Daily Collection</span>
+            {% if pending_collection_today %}
+            <span class="badge bg-warning text-dark" style="font-size:0.6rem;">Pending</span>
+            {% endif %}
+        </a>
+        {% endif %}
+        {% endif %}
+
+        {# ── Finance Head — collection approvals ──────────────────────── #}
+        {% if r == 'finance_head' or r == 'admin' or su %}
+        <div class="nav-label">Finance</div>
+        <a href="{% url 'invoice_list' %}" class="nav-link {% if 'invoice' in request.resolver_match.url_name %}active{% endif %}">
+            <i class="fas fa-file-invoice-dollar"></i> Invoices
+        </a>
+        <a href="{% url 'billing_reports' %}" class="nav-link">
+            <i class="fas fa-chart-bar"></i> Reports
+        </a>
+        <a href="{% url 'collection_list' %}" class="nav-link {% if 'collection' in request.resolver_match.url_name %}active{% endif %} d-flex align-items-center justify-content-between">
+            <span><i class="fas fa-clipboard-check me-2" style="width:18px;text-align:center;"></i>Collection Approvals</span>
+            {% if pending_approvals > 0 %}
+            <span class="badge bg-danger" style="font-size:0.6rem;">{{ pending_approvals }}</span>
+            {% endif %}
+        </a>
         {% endif %}
 
         {# ── Administration — admin only ───────────────────────────────── #}

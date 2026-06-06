@@ -5,7 +5,7 @@ from django.db.models import Q, Sum
 from django.http import JsonResponse
 import json
 
-from .models import Invoice, InvoiceItem, Payment
+from .models import Invoice, InvoiceItem, Payment, DailyCollection
 from patients.models import Patient
 from appointments.models import Appointment
 
@@ -151,4 +151,162 @@ def billing_reports(request):
     return render(request, 'billing/reports.html', {
         'monthly': monthly, 'total_revenue': total_revenue,
         'total_pending': total_pending, 'payment_methods': payment_methods,
+    })
+
+
+# ── Daily Collection ──────────────────────────────────────────────────────────
+
+def _build_collection_summary(cashier, date):
+    """Calculate payment totals for a cashier on a given date from Payment records."""
+    from services.models import InstantService
+    from django.db.models import Sum
+
+    payments = Payment.objects.filter(
+        received_by=cashier,
+        payment_date__date=date,
+    )
+    totals = {
+        'cash': payments.filter(method='cash').aggregate(t=Sum('amount'))['t'] or 0,
+        'card': payments.filter(method='card').aggregate(t=Sum('amount'))['t'] or 0,
+        'insurance': payments.filter(method='insurance').aggregate(t=Sum('amount'))['t'] or 0,
+        'mobile_money': payments.filter(method='mobile_money').aggregate(t=Sum('amount'))['t'] or 0,
+        'bank_transfer': payments.filter(method='bank_transfer').aggregate(t=Sum('amount'))['t'] or 0,
+        'check': payments.filter(method='check').aggregate(t=Sum('amount'))['t'] or 0,
+    }
+    instant = InstantService.objects.filter(
+        performed_by=cashier,
+        created_at__date=date,
+    ).aggregate(t=Sum('total_price'))['t'] or 0
+    total = sum(totals.values()) + float(instant)
+    return totals, float(instant), total, payments.count()
+
+
+@login_required
+def daily_collection_submit(request):
+    from datetime import date as date_type
+    if request.user.role not in ('cashier', 'admin') and not request.user.is_superuser:
+        messages.error(request, 'Only cashiers can submit daily collections.')
+        return redirect('dashboard')
+
+    today = date_type.today()
+    collection, _ = DailyCollection.objects.get_or_create(
+        cashier=request.user, collection_date=today,
+    )
+
+    # Always refresh calculated totals if still draft
+    if collection.status == 'draft':
+        totals, instant, total, count = _build_collection_summary(request.user, today)
+        collection.cash_total = totals['cash']
+        collection.card_total = totals['card']
+        collection.insurance_total = totals['insurance']
+        collection.mobile_money_total = totals['mobile_money']
+        collection.bank_transfer_total = totals['bank_transfer']
+        collection.check_total = totals['check']
+        collection.instant_service_total = instant
+        collection.total_collected = total
+        collection.transaction_count = count
+        collection.save(update_fields=[
+            'cash_total', 'card_total', 'insurance_total', 'mobile_money_total',
+            'bank_transfer_total', 'check_total', 'instant_service_total',
+            'total_collected', 'transaction_count',
+        ])
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'submit' and collection.status == 'draft':
+            from django.utils import timezone
+            collection.notes = request.POST.get('notes', '')
+            collection.status = 'submitted'
+            collection.submitted_at = timezone.now()
+            collection.save()
+            messages.success(request, f'Daily collection for {today} submitted for approval.')
+            return redirect('daily_collection_submit')
+
+    # Get individual payments for the day to show detail
+    today_payments = Payment.objects.filter(
+        received_by=request.user, payment_date__date=today
+    ).select_related('invoice__patient').order_by('-payment_date')
+
+    # History of past collections
+    history = DailyCollection.objects.filter(cashier=request.user).exclude(
+        collection_date=today
+    ).order_by('-collection_date')[:10]
+
+    return render(request, 'billing/daily_collection.html', {
+        'collection': collection,
+        'today_payments': today_payments,
+        'history': history,
+        'today': today,
+    })
+
+
+@login_required
+def collection_list(request):
+    if request.user.role not in ('finance_head', 'admin') and not request.user.is_superuser:
+        messages.error(request, 'Access restricted to Finance Head.')
+        return redirect('dashboard')
+
+    status = request.GET.get('status', 'submitted')
+    qs = DailyCollection.objects.select_related('cashier', 'reviewed_by').order_by(
+        '-collection_date', 'cashier__first_name'
+    )
+    if status:
+        qs = qs.filter(status=status)
+
+    pending_count = DailyCollection.objects.filter(status='submitted').count()
+    return render(request, 'billing/collection_list.html', {
+        'collections': qs,
+        'status': status,
+        'status_choices': DailyCollection.STATUS_CHOICES,
+        'pending_count': pending_count,
+    })
+
+
+@login_required
+def collection_review(request, pk):
+    if request.user.role not in ('finance_head', 'admin') and not request.user.is_superuser:
+        messages.error(request, 'Access restricted to Finance Head.')
+        return redirect('dashboard')
+
+    collection = get_object_or_404(DailyCollection, pk=pk)
+
+    if request.method == 'POST':
+        from django.utils import timezone
+        action = request.POST.get('action')
+        if action == 'approve':
+            collection.status = 'approved'
+            collection.rejection_reason = ''
+            collection.reviewed_by = request.user
+            collection.reviewed_at = timezone.now()
+            collection.save()
+            messages.success(request, f'Collection approved for {collection.cashier.get_full_name()} on {collection.collection_date}.')
+        elif action == 'reject':
+            collection.status = 'rejected'
+            collection.rejection_reason = request.POST.get('rejection_reason', '')
+            collection.reviewed_by = request.user
+            collection.reviewed_at = timezone.now()
+            collection.save()
+            messages.warning(request, f'Collection rejected. Cashier will need to resubmit.')
+            # Reset to draft so cashier can resubmit
+            collection.status = 'draft'
+            collection.submitted_at = None
+            collection.save()
+        return redirect('collection_list')
+
+    # Get individual payments for that day and cashier
+    day_payments = Payment.objects.filter(
+        received_by=collection.cashier,
+        payment_date__date=collection.collection_date,
+    ).select_related('invoice__patient').order_by('-payment_date')
+
+    from services.models import InstantService
+    day_instant = InstantService.objects.filter(
+        performed_by=collection.cashier,
+        created_at__date=collection.collection_date,
+    ).select_related('patient', 'service').order_by('-created_at')
+
+    return render(request, 'billing/collection_detail.html', {
+        'collection': collection,
+        'day_payments': day_payments,
+        'day_instant': day_instant,
     })
