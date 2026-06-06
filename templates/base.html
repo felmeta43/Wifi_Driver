@@ -99,17 +99,30 @@
         </div>
     </div>
     <nav>
+        {# ── Helpers: reusable role groups ───────────────────────────────── #}
+        {% with r=user.role su=user.is_superuser %}
+
+        {# ── Dashboard — everyone ──────────────────────────────────────── #}
         <div class="nav-label">Main</div>
         <a href="{% url 'dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
             <i class="fas fa-chart-line"></i> Dashboard
         </a>
+
+        {# ── Patients — all clinical staff ─────────────────────────────── #}
+        {% if r != 'patient' %}
         <div class="nav-label">Patients</div>
         <a href="{% url 'patient_list' %}" class="nav-link {% if 'patient' in request.resolver_match.url_name %}active{% endif %}">
             <i class="fas fa-user-injured"></i> Patients
         </a>
+        {% if r == 'admin' or r == 'receptionist' or r == 'nurse' or su %}
         <a href="{% url 'patient_create' %}" class="nav-link">
             <i class="fas fa-user-plus"></i> Register Patient
         </a>
+        {% endif %}
+        {% endif %}
+
+        {# ── Appointments — clinical + front-desk ──────────────────────── #}
+        {% if r == 'admin' or r == 'doctor' or r == 'nurse' or r == 'receptionist' or su %}
         <div class="nav-label">Appointments</div>
         <a href="{% url 'today_appointments' %}" class="nav-link {% if request.resolver_match.url_name == 'today_appointments' %}active{% endif %}">
             <i class="fas fa-calendar-day"></i> Today's Appointments
@@ -117,9 +130,15 @@
         <a href="{% url 'appointment_list' %}" class="nav-link {% if 'appointment' in request.resolver_match.url_name %}active{% endif %}">
             <i class="fas fa-calendar-alt"></i> All Appointments
         </a>
+        {% if r == 'admin' or r == 'receptionist' or su %}
         <a href="{% url 'appointment_create' %}" class="nav-link">
             <i class="fas fa-calendar-plus"></i> Book Appointment
         </a>
+        {% endif %}
+        {% endif %}
+
+        {# ── OPD / IPD — clinical & front-desk ────────────────────────── #}
+        {% if r == 'admin' or r == 'doctor' or r == 'nurse' or r == 'receptionist' or su %}
         <div class="nav-label">OPD / IPD</div>
         <a href="{% url 'opd_list' %}" class="nav-link {% if 'opd' in request.resolver_match.url_name %}active{% endif %}">
             <i class="fas fa-door-open"></i> OPD Queue
@@ -127,22 +146,36 @@
         <a href="{% url 'ipd_list' %}" class="nav-link {% if 'ipd' in request.resolver_match.url_name %}active{% endif %}">
             <i class="fas fa-bed"></i> IPD Ward
         </a>
+        {% if r == 'admin' or r == 'receptionist' or r == 'nurse' or su %}
         <a href="{% url 'ipd_admit' %}" class="nav-link">
             <i class="fas fa-user-check"></i> Admit Patient
         </a>
+        {% endif %}
+        {% endif %}
+
+        {# ── Clinical — doctors and nurses ─────────────────────────────── #}
+        {% if r == 'admin' or r == 'doctor' or r == 'nurse' or r == 'receptionist' or su %}
         <div class="nav-label">Clinical</div>
         <a href="{% url 'doctor_list' %}" class="nav-link {% if 'doctor' in request.resolver_match.url_name %}active{% endif %}">
             <i class="fas fa-user-md"></i> Doctors
         </a>
+        {% if r == 'admin' or r == 'doctor' or su %}
         <a href="{% url 'operation_note_list' %}" class="nav-link {% if 'operation' in request.resolver_match.url_name %}active{% endif %}">
             <i class="fas fa-scalpel-path"></i> Operation Notes
         </a>
         <a href="{% url 'consultation_list' %}" class="nav-link {% if 'consultation' in request.resolver_match.url_name %}active{% endif %}">
             <i class="fas fa-comments-medical"></i> Consultations
         </a>
+        {% endif %}
+        {% if r == 'admin' or r == 'nurse' or su %}
         <a href="{% url 'handover_list' %}" class="nav-link {% if 'handover' in request.resolver_match.url_name %}active{% endif %}">
             <i class="fas fa-exchange-alt"></i> Handover
         </a>
+        {% endif %}
+        {% endif %}
+
+        {# ── Diagnostics — clinical + lab tech ─────────────────────────── #}
+        {% if r == 'admin' or r == 'doctor' or r == 'nurse' or r == 'lab_technician' or r == 'receptionist' or su %}
         <div class="nav-label">Diagnostics</div>
         <a href="{% url 'lab_order_list' %}" class="nav-link {% if 'lab_order' in request.resolver_match.url_name %}active{% endif %}">
             <i class="fas fa-flask"></i> Laboratory
@@ -150,6 +183,10 @@
         <a href="{% url 'radiology_order_list' %}" class="nav-link {% if 'radiology' in request.resolver_match.url_name %}active{% endif %}">
             <i class="fas fa-x-ray"></i> Radiology / Imaging
         </a>
+        {% endif %}
+
+        {# ── Pharmacy — pharmacist, doctor, nurse ──────────────────────── #}
+        {% if r == 'admin' or r == 'pharmacist' or r == 'doctor' or r == 'nurse' or su %}
         <div class="nav-label">Pharmacy</div>
         <a href="{% url 'medicine_list' %}" class="nav-link {% if 'medicine' in request.resolver_match.url_name %}active{% endif %}">
             <i class="fas fa-pills"></i> Medicines
@@ -157,7 +194,11 @@
         <a href="{% url 'prescription_list' %}" class="nav-link {% if 'prescription' in request.resolver_match.url_name %}active{% endif %}">
             <i class="fas fa-prescription-bottle-alt"></i> Prescriptions
         </a>
-        <div class="nav-label">Services & Finance</div>
+        {% endif %}
+
+        {# ── Services & Finance — front-desk + accountant ──────────────── #}
+        {% if r == 'admin' or r == 'receptionist' or r == 'accountant' or su %}
+        <div class="nav-label">Services &amp; Finance</div>
         <a href="{% url 'service_list' %}" class="nav-link {% if 'service' in request.resolver_match.url_name %}active{% endif %}">
             <i class="fas fa-concierge-bell"></i> Services
         </a>
@@ -167,10 +208,15 @@
         <a href="{% url 'invoice_list' %}" class="nav-link {% if 'invoice' in request.resolver_match.url_name %}active{% endif %}">
             <i class="fas fa-file-invoice-dollar"></i> Invoices
         </a>
+        {% if r == 'admin' or r == 'accountant' or su %}
         <a href="{% url 'billing_reports' %}" class="nav-link">
             <i class="fas fa-chart-bar"></i> Reports
         </a>
-        {% if user.role == 'admin' or user.is_superuser %}
+        {% endif %}
+        {% endif %}
+
+        {# ── Administration — admin only ───────────────────────────────── #}
+        {% if r == 'admin' or su %}
         <div class="nav-label">Administration</div>
         <a href="{% url 'departments' %}" class="nav-link">
             <i class="fas fa-sitemap"></i> Departments
@@ -182,6 +228,8 @@
             <i class="fas fa-cog"></i> Hospital Settings
         </a>
         {% endif %}
+
+        {% endwith %}
     </nav>
     <div class="sidebar-footer">
         <a href="{% url 'profile' %}" class="nav-link">
