@@ -15,9 +15,14 @@ def generate_order_id():
     return f"LAB{num:06d}"
 
 
+TOP_LAB_SECTIONS = [
+    'HEMATOLOGY', 'SEROLOGY', 'CLINICAL CHEMISTRY', 'HORMONE ANALYSIS',
+    'MICRO-BIOLOGY', 'PARA-MICRO', 'BODY FLUID ANALYSIS',
+]
+
+
 @login_required
 def lab_test_list(request):
-    tests = LabTest.objects.filter(is_active=True)
     if request.method == 'POST':
         LabTest.objects.create(
             name=request.POST.get('name'),
@@ -29,11 +34,66 @@ def lab_test_list(request):
         )
         messages.success(request, 'Lab test added!')
         return redirect('lab_test_list')
-    return render(request, 'laboratory/lab_test_list.html', {'tests': tests})
+
+    from collections import defaultdict, OrderedDict
+    all_tests = list(LabTest.objects.filter(is_active=True).order_by('name'))
+
+    # Group tests by their stated panel (extracted from description)
+    tests_by_panel = defaultdict(list)
+    for t in all_tests:
+        if t.description.startswith('Panel: '):
+            panel = t.description[7:]
+        else:
+            panel = '__root__'
+        tests_by_panel[panel].append(t)
+
+    # Build hierarchical tree: section → [{test, sub_tests}, …]
+    tree = OrderedDict()
+    for section in TOP_LAB_SECTIONS:
+        if section not in tests_by_panel:
+            continue
+        entries = []
+        for panel_test in sorted(tests_by_panel[section], key=lambda x: x.name):
+            entries.append({
+                'test': panel_test,
+                'sub_tests': sorted(tests_by_panel.get(panel_test.name, []), key=lambda x: x.name),
+            })
+        if entries:
+            tree[section] = entries
+
+    # Collect any panels not under a known top-level section.
+    # Skip a panel if a panel_test with that name was already placed in the tree.
+    already_placed = {e['test'].name for sec_entries in tree.values() for e in sec_entries}
+    known = set(TOP_LAB_SECTIONS)
+    for panel_name, pts in sorted(tests_by_panel.items()):
+        if panel_name in known or panel_name == '__root__':
+            continue
+        if panel_name in already_placed:
+            continue
+        tree[panel_name] = [
+            {'test': t, 'sub_tests': tests_by_panel.get(t.name, [])}
+            for t in sorted(pts, key=lambda x: x.name)
+        ]
+
+    # Standalone tests (no panel grouping)
+    root_tests = tests_by_panel.get('__root__', [])
+
+    # Convert to list of (section_name, entries, count) for simple template iteration
+    tree_list = [
+        (sec, entries, sum(1 + len(e['sub_tests']) for e in entries))
+        for sec, entries in tree.items()
+    ]
+
+    return render(request, 'laboratory/lab_test_list.html', {
+        'tree': tree_list,
+        'root_tests': root_tests,
+        'total_tests': len(all_tests),
+    })
 
 
 @login_required
 def lab_order_list(request):
+    from django.core.paginator import Paginator
     query = request.GET.get('q', '')
     status = request.GET.get('status', '')
     orders = LabOrder.objects.select_related('patient', 'doctor__user').order_by('-ordered_at')
@@ -45,8 +105,11 @@ def lab_order_list(request):
         )
     if status:
         orders = orders.filter(status=status)
+    paginator = Paginator(orders, 10)
+    page_obj = paginator.get_page(request.GET.get('page'))
     return render(request, 'laboratory/lab_order_list.html', {
-        'orders': orders, 'query': query, 'status': status,
+        'orders': page_obj, 'page_obj': page_obj,
+        'query': query, 'status': status,
         'status_choices': LabOrder.STATUS_CHOICES,
     })
 

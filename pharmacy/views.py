@@ -18,6 +18,7 @@ def generate_prescription_id():
 
 @login_required
 def medicine_list(request):
+    from django.core.paginator import Paginator
     query = request.GET.get('q', '')
     category = request.GET.get('category', '')
     medicines = Medicine.objects.filter(is_active=True).order_by('name')
@@ -26,9 +27,13 @@ def medicine_list(request):
     if category:
         medicines = medicines.filter(category=category)
     low_stock = Medicine.objects.filter(is_active=True, stock_quantity__lte=10)
+    paginator = Paginator(medicines, 10)
+    page_obj = paginator.get_page(request.GET.get('page'))
     return render(request, 'pharmacy/medicine_list.html', {
-        'medicines': medicines, 'query': query, 'category': category,
-        'categories': Medicine.CATEGORY_CHOICES, 'low_stock_count': low_stock.count(),
+        'medicines': page_obj, 'page_obj': page_obj,
+        'query': query, 'category': category,
+        'categories': Medicine.CATEGORY_CHOICES,
+        'low_stock_count': low_stock.count(),
     })
 
 
@@ -98,8 +103,21 @@ def stock_in(request, pk):
 
 @login_required
 def prescription_list(request):
+    from django.core.paginator import Paginator
+    query = request.GET.get('q', '')
     prescriptions = Prescription.objects.select_related('patient', 'doctor__user').order_by('-created_at')
-    return render(request, 'pharmacy/prescription_list.html', {'prescriptions': prescriptions})
+    if query:
+        from django.db.models import Q
+        prescriptions = prescriptions.filter(
+            Q(prescription_id__icontains=query) |
+            Q(patient__first_name__icontains=query) |
+            Q(patient__last_name__icontains=query)
+        )
+    paginator = Paginator(prescriptions, 10)
+    page_obj = paginator.get_page(request.GET.get('page'))
+    return render(request, 'pharmacy/prescription_list.html', {
+        'prescriptions': page_obj, 'page_obj': page_obj, 'query': query,
+    })
 
 
 @login_required

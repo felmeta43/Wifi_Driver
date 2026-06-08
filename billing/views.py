@@ -18,6 +18,7 @@ def generate_invoice_number():
 
 @login_required
 def invoice_list(request):
+    from django.core.paginator import Paginator
     query = request.GET.get('q', '')
     status = request.GET.get('status', '')
     invoices = Invoice.objects.select_related('patient').order_by('-created_at')
@@ -32,8 +33,11 @@ def invoice_list(request):
     total_revenue = Payment.objects.aggregate(total=Sum('amount'))['total'] or 0
     pending_amount = Invoice.objects.filter(status='pending').aggregate(
         total=Sum('total_amount'))['total'] or 0
+    paginator = Paginator(invoices, 10)
+    page_obj = paginator.get_page(request.GET.get('page'))
     return render(request, 'billing/invoice_list.html', {
-        'invoices': invoices, 'query': query, 'status': status,
+        'invoices': page_obj, 'page_obj': page_obj,
+        'query': query, 'status': status,
         'status_choices': Invoice.STATUS_CHOICES,
         'total_revenue': total_revenue, 'pending_amount': pending_amount,
     })

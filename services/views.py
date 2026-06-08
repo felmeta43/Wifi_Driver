@@ -24,15 +24,32 @@ def gen_receipt_number():
 def service_list(request):
     query = request.GET.get('q', '')
     stype = request.GET.get('type', '')
-    services = Service.objects.select_related('category', 'department').filter(is_active=True)
+    active_cat = request.GET.get('cat', '')
+
+    services = Service.objects.select_related('category').filter(is_active=True).order_by('name')
     if query:
         services = services.filter(Q(name__icontains=query) | Q(code__icontains=query))
     if stype:
         services = services.filter(service_type=stype)
-    categories = ServiceCategory.objects.filter(is_active=True)
+
+    categories = ServiceCategory.objects.filter(is_active=True).order_by('name')
+
+    # Build per-category service lists for the accordion view
+    from collections import OrderedDict
+    cat_services = OrderedDict()
+    for cat in categories:
+        cat_svcs = list(services.filter(category=cat))
+        if cat_svcs:
+            cat_services[cat] = cat_svcs
+
+    uncategorized = list(services.filter(category__isnull=True))
+
     return render(request, 'services/service_list.html', {
-        'services': services, 'query': query, 'stype': stype,
+        'cat_services': cat_services,
+        'uncategorized': uncategorized,
+        'query': query, 'stype': stype, 'active_cat': active_cat,
         'categories': categories, 'type_choices': Service.TYPE_CHOICES,
+        'total_services': services.count(),
     })
 
 
@@ -118,6 +135,7 @@ def category_list(request):
 
 @login_required
 def service_order_list(request):
+    from django.core.paginator import Paginator
     orders = ServiceOrder.objects.select_related('patient', 'doctor__user').order_by('-created_at')
     query = request.GET.get('q', '')
     if query:
@@ -126,7 +144,11 @@ def service_order_list(request):
             Q(patient__first_name__icontains=query) |
             Q(patient__last_name__icontains=query)
         )
-    return render(request, 'services/order_list.html', {'orders': orders, 'query': query})
+    paginator = Paginator(orders, 10)
+    page_obj = paginator.get_page(request.GET.get('page'))
+    return render(request, 'services/order_list.html', {
+        'orders': page_obj, 'page_obj': page_obj, 'query': query,
+    })
 
 
 @login_required

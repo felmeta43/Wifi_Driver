@@ -16,6 +16,7 @@ def generate_patient_id():
 
 @login_required
 def patient_list(request):
+    from django.core.paginator import Paginator
     query = request.GET.get('q', '')
     status = request.GET.get('status', '')
     patients = Patient.objects.all().order_by('-registered_at')
@@ -26,8 +27,11 @@ def patient_list(request):
         )
     if status:
         patients = patients.filter(status=status)
+    paginator = Paginator(patients, 10)
+    page_obj = paginator.get_page(request.GET.get('page'))
     return render(request, 'patients/patient_list.html', {
-        'patients': patients, 'query': query, 'status': status
+        'patients': page_obj, 'page_obj': page_obj,
+        'query': query, 'status': status,
     })
 
 

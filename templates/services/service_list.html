@@ -1,49 +1,197 @@
 {% extends 'base.html' %}
 {% block title %}Services{% endblock %}
-{% block page_title %}Service Management{% endblock %}
+{% block page_title %}Service Catalog{% endblock %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-<h5 class="mb-0 fw-semibold">Service Catalog</h5>
-<div class="d-flex gap-2">
-<a href="{% url 'service_category_list' %}" class="btn btn-outline-primary btn-sm">Categories</a>
-<a href="{% url 'service_order_list' %}" class="btn btn-outline-secondary btn-sm">Orders</a>
-<a href="{% url 'instant_service' %}" class="btn btn-warning btn-sm text-white"><i class="fas fa-bolt me-1"></i>Instant</a>
-<a href="{% url 'service_create' %}" class="btn btn-primary btn-sm"><i class="fas fa-plus me-1"></i>Add Service</a>
-</div>
-</div>
-<form method="get" class="row g-2 mb-3">
-<div class="col-md-4"><div class="search-box"><i class="fas fa-search text-muted"></i><input type="text" name="q" value="{{ query }}" placeholder="Search..."></div></div>
-<div class="col-md-3"><select name="type" class="form-select form-select-sm">
-<option value="">All Types</option>
-{% for val, label in type_choices %}<option value="{{ val }}" {% if stype == val %}selected{% endif %}>{{ label }}</option>{% endfor %}
-</select></div>
-<div class="col-md-2"><button type="submit" class="btn btn-primary btn-sm w-100">Filter</button></div>
-</form>
-<div class="card">
-<div class="table-responsive">
-<table class="table table-hover mb-0">
-<thead><tr><th class="ps-4">Code</th><th>Name</th><th>Category</th><th>Type</th><th>Price</th><th>Duration</th><th class="pe-4">Actions</th></tr></thead>
-<tbody>
-{% for svc in services %}
-<tr>
-<td class="ps-4 fw-semibold text-primary">{{ svc.code }}</td>
-<td><div class="fw-semibold">{{ svc.name }}</div><div class="text-muted small">{{ svc.department.name|default:"" }}</div></td>
-<td class="text-muted small">{{ svc.category.name|default:"-" }}</td>
-<td><span class="badge bg-light text-dark">{{ svc.get_service_type_display }}</span></td>
-<td>
-  <span class="fw-semibold">{{ hospital.currency_symbol }}{{ svc.price }}</span>
-  <button type="button" class="btn btn-xs btn-link p-0 ms-1 text-muted" style="font-size:0.75rem;"
-    data-bs-toggle="modal" data-bs-target="#priceModal{{ svc.pk }}" title="Update price">
-    <i class="fas fa-pen"></i>
-  </button>
-</td>
-<td class="text-muted small">{{ svc.duration_minutes }} min</td>
-<td class="pe-4">
-<a href="{% url 'service_edit' svc.pk %}" class="btn btn-sm btn-outline-primary"><i class="fas fa-edit"></i></a>
-</td>
-</tr>
 
-{# Price update modal #}
+{# ── Top bar ───────────────────────────────────────────────────────────────── #}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+  <div>
+    <h5 class="mb-0 fw-semibold">Service Catalog</h5>
+    <div class="text-muted small">{{ total_services }} active service{{ total_services|pluralize }}</div>
+  </div>
+  <div class="d-flex gap-2 flex-wrap">
+    <a href="{% url 'service_category_list' %}" class="btn btn-outline-primary btn-sm">
+      <i class="fas fa-tags me-1"></i>Categories
+    </a>
+    <a href="{% url 'service_order_list' %}" class="btn btn-outline-secondary btn-sm">
+      <i class="fas fa-list-check me-1"></i>Orders
+    </a>
+    <a href="{% url 'instant_service' %}" class="btn btn-warning btn-sm text-white">
+      <i class="fas fa-bolt me-1"></i>Instant
+    </a>
+    <a href="{% url 'service_create' %}" class="btn btn-primary btn-sm">
+      <i class="fas fa-plus me-1"></i>Add Service
+    </a>
+  </div>
+</div>
+
+{# ── Search & filter bar ──────────────────────────────────────────────────── #}
+<div class="card mb-3">
+  <div class="card-body py-3 px-4">
+    <div class="row g-2 align-items-center">
+      <div class="col-md-5">
+        <div class="input-group input-group-sm">
+          <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted"></i></span>
+          <input id="liveSearch" type="text" class="form-control border-start-0 ps-0"
+                 placeholder="Live search by name or code…" autocomplete="off">
+        </div>
+      </div>
+      <div class="col-md-3">
+        <form method="get" id="filterForm" class="d-flex gap-2">
+          <select name="type" class="form-select form-select-sm" onchange="document.getElementById('filterForm').submit()">
+            <option value="">All Types</option>
+            {% for val, label in type_choices %}
+            <option value="{{ val }}" {% if stype == val %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+          {% if query %}<input type="hidden" name="q" value="{{ query }}">{% endif %}
+        </form>
+      </div>
+      <div class="col-md-4 text-end">
+        <span class="text-muted small" id="matchCount"></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# ── Category accordion ──────────────────────────────────────────────────── #}
+<div class="accordion" id="serviceAccordion">
+
+{% for cat, svcs in cat_services.items %}
+{% with cat_slug="cat_"|add:cat.pk|stringformat:"s" %}
+<div class="accordion-item border rounded mb-2 shadow-sm" data-category="{{ cat.name|lower }}">
+  <h2 class="accordion-header" id="head_{{ cat_slug }}">
+    <button class="accordion-button {% if not forloop.first %}collapsed{% endif %} py-3 px-4"
+            type="button" data-bs-toggle="collapse"
+            data-bs-target="#body_{{ cat_slug }}"
+            aria-expanded="{% if forloop.first %}true{% else %}false{% endif %}">
+      <span class="me-3 fs-5 text-primary" style="width:24px;text-align:center;">
+        <i class="fas {{ cat.icon|default:'fa-concierge-bell' }}"></i>
+      </span>
+      <span class="fw-semibold flex-grow-1">{{ cat.name }}</span>
+      <span class="badge bg-primary-subtle text-primary rounded-pill ms-2 me-3 cat-badge">
+        {{ svcs|length }}
+      </span>
+    </button>
+  </h2>
+  <div id="body_{{ cat_slug }}" class="accordion-collapse collapse {% if forloop.first %}show{% endif %}">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0 svc-table">
+        <thead class="table-light">
+          <tr>
+            <th class="ps-4" style="width:100px;">Code</th>
+            <th>Name</th>
+            <th style="width:120px;">Type</th>
+            <th style="width:100px;">Price</th>
+            <th style="width:90px;">Duration</th>
+            <th class="pe-4" style="width:80px;">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for svc in svcs %}
+        <tr class="svc-row" data-name="{{ svc.name|lower }}" data-code="{{ svc.code|lower }}">
+          <td class="ps-4 fw-semibold text-primary small">{{ svc.code }}</td>
+          <td class="fw-semibold">{{ svc.name }}</td>
+          <td>
+            <span class="badge bg-light text-dark border">{{ svc.get_service_type_display }}</span>
+          </td>
+          <td>
+            <span class="fw-semibold">{{ hospital.currency_symbol }}{{ svc.price }}</span>
+            <button type="button" class="btn btn-link btn-sm p-0 ms-1 text-muted"
+                    data-bs-toggle="modal" data-bs-target="#priceModal{{ svc.pk }}"
+                    title="Quick update price">
+              <i class="fas fa-pen fa-xs"></i>
+            </button>
+          </td>
+          <td class="text-muted small">{{ svc.duration_minutes }} min</td>
+          <td class="pe-4">
+            <a href="{% url 'service_edit' svc.pk %}" class="btn btn-sm btn-outline-secondary">
+              <i class="fas fa-edit"></i>
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+        <tr class="no-results d-none">
+          <td colspan="6" class="text-center text-muted py-3 fst-italic small">No matching services in this category.</td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endwith %}
+{% endfor %}
+
+{% if uncategorized %}
+<div class="accordion-item border rounded mb-2 shadow-sm" data-category="uncategorized">
+  <h2 class="accordion-header" id="head_uncat">
+    <button class="accordion-button collapsed py-3 px-4" type="button"
+            data-bs-toggle="collapse" data-bs-target="#body_uncat">
+      <span class="me-3 fs-5 text-secondary" style="width:24px;text-align:center;">
+        <i class="fas fa-layer-group"></i>
+      </span>
+      <span class="fw-semibold flex-grow-1">Uncategorized</span>
+      <span class="badge bg-secondary-subtle text-secondary rounded-pill ms-2 me-3 cat-badge">
+        {{ uncategorized|length }}
+      </span>
+    </button>
+  </h2>
+  <div id="body_uncat" class="accordion-collapse collapse">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0 svc-table">
+        <thead class="table-light">
+          <tr>
+            <th class="ps-4" style="width:100px;">Code</th>
+            <th>Name</th>
+            <th style="width:120px;">Type</th>
+            <th style="width:100px;">Price</th>
+            <th style="width:90px;">Duration</th>
+            <th class="pe-4" style="width:80px;">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for svc in uncategorized %}
+        <tr class="svc-row" data-name="{{ svc.name|lower }}" data-code="{{ svc.code|lower }}">
+          <td class="ps-4 fw-semibold text-primary small">{{ svc.code }}</td>
+          <td class="fw-semibold">{{ svc.name }}</td>
+          <td><span class="badge bg-light text-dark border">{{ svc.get_service_type_display }}</span></td>
+          <td>
+            <span class="fw-semibold">{{ hospital.currency_symbol }}{{ svc.price }}</span>
+            <button type="button" class="btn btn-link btn-sm p-0 ms-1 text-muted"
+                    data-bs-toggle="modal" data-bs-target="#priceModal{{ svc.pk }}">
+              <i class="fas fa-pen fa-xs"></i>
+            </button>
+          </td>
+          <td class="text-muted small">{{ svc.duration_minutes }} min</td>
+          <td class="pe-4">
+            <a href="{% url 'service_edit' svc.pk %}" class="btn btn-sm btn-outline-secondary">
+              <i class="fas fa-edit"></i>
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+        <tr class="no-results d-none">
+          <td colspan="6" class="text-center text-muted py-3 fst-italic small">No matching services.</td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% if not cat_services and not uncategorized %}
+<div class="card">
+  <div class="card-body text-center text-muted py-5">
+    No services found. <a href="{% url 'service_create' %}">Add one.</a>
+  </div>
+</div>
+{% endif %}
+
+</div>{# end accordion #}
+
+{# ── Price update modals ──────────────────────────────────────────────────── #}
+{% for cat, svcs in cat_services.items %}{% for svc in svcs %}
 <div class="modal fade" id="priceModal{{ svc.pk }}" tabindex="-1">
   <div class="modal-dialog modal-sm">
     <div class="modal-content">
@@ -56,19 +204,93 @@
         <div class="modal-body py-3 px-3">
           <div class="small text-muted mb-2">{{ svc.name }}</div>
           <label class="form-label small fw-semibold">New Price ({{ hospital.currency_symbol }})</label>
-          <input type="number" name="price" class="form-control form-control-sm" value="{{ svc.price }}" step="0.01" min="0" required>
+          <input type="number" name="price" class="form-control form-control-sm"
+                 value="{{ svc.price }}" step="0.01" min="0" required>
         </div>
         <div class="modal-footer py-2 px-3">
           <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-sm btn-primary">Save Price</button>
+          <button type="submit" class="btn btn-sm btn-primary">Save</button>
         </div>
       </form>
     </div>
   </div>
 </div>
-{% empty %}<tr><td colspan="7" class="text-center text-muted py-5">No services. <a href="{% url 'service_create' %}">Add one.</a></td></tr>{% endfor %}
-</tbody>
-</table>
+{% endfor %}{% endfor %}
+
+{% for svc in uncategorized %}
+<div class="modal fade" id="priceModal{{ svc.pk }}" tabindex="-1">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header py-2 px-3">
+        <h6 class="modal-title fw-bold mb-0">Update Price</h6>
+        <button type="button" class="btn-close btn-sm" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="post" action="{% url 'service_update_price' svc.pk %}">
+        {% csrf_token %}
+        <div class="modal-body py-3 px-3">
+          <div class="small text-muted mb-2">{{ svc.name }}</div>
+          <label class="form-label small fw-semibold">New Price ({{ hospital.currency_symbol }})</label>
+          <input type="number" name="price" class="form-control form-control-sm"
+                 value="{{ svc.price }}" step="0.01" min="0" required>
+        </div>
+        <div class="modal-footer py-2 px-3">
+          <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-sm btn-primary">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
 </div>
-</div>
+{% endfor %}
+
+{# ── Live search script ───────────────────────────────────────────────────── #}
+<script>
+(function () {
+  const input = document.getElementById('liveSearch');
+  const countEl = document.getElementById('matchCount');
+
+  input.addEventListener('input', function () {
+    const term = this.value.toLowerCase().trim();
+    let total = 0;
+
+    document.querySelectorAll('.accordion-item').forEach(function (block) {
+      const rows = block.querySelectorAll('.svc-row');
+      let visible = 0;
+
+      rows.forEach(function (row) {
+        const name = row.dataset.name || '';
+        const code = row.dataset.code || '';
+        const match = !term || name.includes(term) || code.includes(term);
+        row.style.display = match ? '' : 'none';
+        if (match) visible++;
+      });
+
+      total += visible;
+
+      // Update count badge
+      const badge = block.querySelector('.cat-badge');
+      if (badge) badge.textContent = visible;
+
+      // Show/hide "no results" row
+      const noRes = block.querySelector('.no-results');
+      if (noRes) noRes.classList.toggle('d-none', visible > 0 || !term);
+
+      // Auto-expand sections with matches when searching
+      const collapseEl = block.querySelector('.accordion-collapse');
+      const btn = block.querySelector('.accordion-button');
+      if (term && visible > 0) {
+        collapseEl.classList.add('show');
+        btn.classList.remove('collapsed');
+        btn.setAttribute('aria-expanded', 'true');
+      } else if (term && visible === 0) {
+        collapseEl.classList.remove('show');
+        btn.classList.add('collapsed');
+        btn.setAttribute('aria-expanded', 'false');
+      }
+    });
+
+    countEl.textContent = term ? total + ' match' + (total !== 1 ? 'es' : '') : '';
+  });
+})();
+</script>
 {% endblock %}

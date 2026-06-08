@@ -1,47 +1,259 @@
 {% extends 'base.html' %}
 {% block title %}Lab Tests{% endblock %}
-{% block page_title %}Lab Tests{% endblock %}
+{% block page_title %}Laboratory Tests{% endblock %}
 {% block content %}
+
 <div class="row g-3">
-<div class="col-md-4">
-<div class="card">
-<div class="card-header py-3 px-4">Add Lab Test</div>
-<div class="card-body p-4">
-<form method="post">{% csrf_token %}
-<div class="mb-3"><label class="form-label fw-semibold">Test Name *</label><input type="text" name="name" class="form-control" required></div>
-<div class="mb-3"><label class="form-label fw-semibold">Price</label><input type="number" name="price" class="form-control" step="0.01" value="0"></div>
-<div class="mb-3"><label class="form-label fw-semibold">Normal Range</label><input type="text" name="normal_range" class="form-control" placeholder="e.g. 70-100 mg/dL"></div>
-<div class="mb-3"><label class="form-label fw-semibold">Unit</label><input type="text" name="unit" class="form-control" placeholder="e.g. mg/dL"></div>
-<div class="mb-3"><label class="form-label fw-semibold">Turnaround Time</label><input type="text" name="turnaround_time" class="form-control" placeholder="e.g. 2 hours"></div>
-<div class="mb-3"><label class="form-label fw-semibold">Description</label><textarea name="description" class="form-control" rows="2"></textarea></div>
-<button type="submit" class="btn btn-primary w-100">Add Test</button>
-</form>
+
+{# ── Left: Add Test form ──────────────────────────────────────────────────── #}
+<div class="col-md-3">
+  <div class="card sticky-top" style="top:80px;">
+    <div class="card-header py-3 px-4 fw-semibold">
+      <i class="fas fa-plus-circle me-2 text-primary"></i>Add Lab Test
+    </div>
+    <div class="card-body p-4">
+      <form method="post">{% csrf_token %}
+        <div class="mb-3">
+          <label class="form-label fw-semibold small">Test Name *</label>
+          <input type="text" name="name" class="form-control form-control-sm" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold small">Price</label>
+          <input type="number" name="price" class="form-control form-control-sm" step="0.01" value="0">
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold small">Normal Range</label>
+          <input type="text" name="normal_range" class="form-control form-control-sm" placeholder="e.g. 70-100 mg/dL">
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold small">Unit</label>
+          <input type="text" name="unit" class="form-control form-control-sm" placeholder="e.g. mg/dL">
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold small">Turnaround Time</label>
+          <input type="text" name="turnaround_time" class="form-control form-control-sm" placeholder="e.g. 2 hours">
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold small">Description / Panel</label>
+          <input type="text" name="description" class="form-control form-control-sm" placeholder="e.g. Panel: HEMATOLOGY">
+        </div>
+        <button type="submit" class="btn btn-primary btn-sm w-100">
+          <i class="fas fa-plus me-1"></i>Add Test
+        </button>
+      </form>
+    </div>
+  </div>
 </div>
-</div>
-</div>
-<div class="col-md-8">
-<div class="card">
-<div class="card-header py-3 px-4 d-flex justify-content-between align-items-center">
-<span>Lab Tests Catalog</span>
-<a href="{% url 'lab_order_create' %}" class="btn btn-sm btn-primary"><i class="fas fa-flask me-1"></i>New Order</a>
-</div>
-<div class="table-responsive">
-<table class="table table-hover mb-0">
-<thead><tr><th class="ps-4">Name</th><th>Normal Range</th><th>Unit</th><th>Price</th><th>Turnaround</th></tr></thead>
-<tbody>
-{% for test in tests %}
-<tr>
-<td class="ps-4 fw-semibold">{{ test.name }}</td>
-<td class="text-muted small">{{ test.normal_range|default:"-" }}</td>
-<td class="text-muted small">{{ test.unit|default:"-" }}</td>
-<td>{{ hospital.currency_symbol }}{{ test.price }}</td>
-<td class="text-muted small">{{ test.turnaround_time|default:"-" }}</td>
-</tr>
-{% empty %}<tr><td colspan="5" class="text-center text-muted py-4">No tests yet.</td></tr>{% endfor %}
-</tbody>
-</table>
-</div>
-</div>
-</div>
-</div>
+
+{# ── Right: Grouped test catalog ─────────────────────────────────────────── #}
+<div class="col-md-9">
+
+  {# Header + stats + search #}
+  <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div>
+      <h6 class="mb-0 fw-semibold">Tests Catalog</h6>
+      <div class="text-muted small">{{ total_tests }} tests loaded</div>
+    </div>
+    <div class="d-flex gap-2 align-items-center">
+      <div class="input-group input-group-sm" style="width:240px;">
+        <span class="input-group-text bg-white border-end-0">
+          <i class="fas fa-search text-muted"></i>
+        </span>
+        <input id="labSearch" type="text" class="form-control border-start-0 ps-0"
+               placeholder="Search tests…" autocomplete="off">
+      </div>
+      <a href="{% url 'lab_order_create' %}" class="btn btn-sm btn-primary">
+        <i class="fas fa-flask me-1"></i>New Order
+      </a>
+    </div>
+  </div>
+
+  <div id="matchBanner" class="alert alert-info py-2 px-3 small d-none mb-2">
+    <i class="fas fa-filter me-1"></i><span id="matchText"></span>
+  </div>
+
+  {# Accordion: one section per top-level group #}
+  <div class="accordion" id="labAccordion">
+
+  {% for section_name, panels, sec_count in tree %}
+  {% with sec_id="sec_"|add:forloop.counter|stringformat:"s" %}
+  <div class="accordion-item border rounded mb-2 lab-section" data-section="{{ section_name|lower }}">
+    <h2 class="accordion-header" id="h_{{ sec_id }}">
+      <button class="accordion-button {% if not forloop.first %}collapsed{% endif %} py-3 px-4"
+              type="button" data-bs-toggle="collapse" data-bs-target="#b_{{ sec_id }}"
+              aria-expanded="{% if forloop.first %}true{% else %}false{% endif %}">
+        <span class="fw-semibold text-uppercase flex-grow-1">{{ section_name }}</span>
+        <span class="badge bg-primary-subtle text-primary rounded-pill ms-2 me-2 sec-badge">
+          {{ sec_count }}
+        </span>
+      </button>
+    </h2>
+    <div id="b_{{ sec_id }}" class="accordion-collapse collapse {% if forloop.first %}show{% endif %}">
+      <div class="accordion-body p-0">
+
+        {% for panel_entry in panels %}
+        {# Panel row (orderable test) #}
+        <div class="lab-panel-row test-row"
+             data-name="{{ panel_entry.test.name|lower }}"
+             data-unit="{{ panel_entry.test.unit|lower }}"
+             style="background:#f8f9fa;">
+          <div class="d-flex align-items-center px-4 py-2 border-bottom">
+            <div class="fw-semibold flex-grow-1">
+              <i class="fas fa-circle-dot me-2 text-primary" style="font-size:0.6rem;"></i>
+              {{ panel_entry.test.name }}
+              {% if panel_entry.sub_tests %}
+              <span class="badge bg-light text-dark border ms-1" style="font-size:0.7rem;">
+                {{ panel_entry.sub_tests|length }} sub-tests
+              </span>
+              {% endif %}
+            </div>
+            <div class="d-flex gap-4 text-muted small text-end">
+              {% if panel_entry.test.normal_range %}
+              <span class="d-none d-md-inline">{{ panel_entry.test.normal_range }}</span>
+              {% endif %}
+              {% if panel_entry.test.unit %}
+              <span style="width:60px;">{{ panel_entry.test.unit }}</span>
+              {% endif %}
+              <span style="width:80px;" class="fw-semibold text-dark">
+                {{ hospital.currency_symbol }}{{ panel_entry.test.price }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {# Sub-test rows (indented) #}
+        {% for sub in panel_entry.sub_tests %}
+        <div class="test-row sub-test-row"
+             data-name="{{ sub.name|lower }}"
+             data-unit="{{ sub.unit|lower }}">
+          <div class="d-flex align-items-center py-2 border-bottom"
+               style="padding-left:2.5rem; padding-right:1rem;">
+            <div class="text-muted flex-grow-1 small">
+              <i class="fas fa-minus me-2" style="font-size:0.6rem;"></i>
+              {{ sub.name }}
+            </div>
+            <div class="d-flex gap-4 text-muted small text-end">
+              {% if sub.normal_range %}
+              <span class="d-none d-md-inline">{{ sub.normal_range }}</span>
+              {% endif %}
+              <span style="width:60px;">{{ sub.unit|default:"-" }}</span>
+              <span style="width:80px;">{{ hospital.currency_symbol }}{{ sub.price }}</span>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+        {% empty %}
+        <div class="text-center text-muted py-4 small fst-italic">No tests in this section.</div>
+        {% endfor %}
+
+        <div class="no-match-row d-none text-center text-muted py-3 small fst-italic">
+          No matching tests in this section.
+        </div>
+
+      </div>
+    </div>
+  </div>
+  {% endwith %}
+  {% endfor %}
+
+  {# Standalone / root tests (no panel grouping) #}
+  {% if root_tests %}
+  <div class="accordion-item border rounded mb-2 lab-section" data-section="other">
+    <h2 class="accordion-header" id="h_other">
+      <button class="accordion-button collapsed py-3 px-4" type="button"
+              data-bs-toggle="collapse" data-bs-target="#b_other">
+        <span class="fw-semibold text-uppercase flex-grow-1">Other Tests</span>
+        <span class="badge bg-secondary-subtle text-secondary rounded-pill ms-2 me-2 sec-badge">
+          {{ root_tests|length }}
+        </span>
+      </button>
+    </h2>
+    <div id="b_other" class="accordion-collapse collapse">
+      <div class="accordion-body p-0">
+        {% for test in root_tests %}
+        <div class="test-row" data-name="{{ test.name|lower }}" data-unit="{{ test.unit|lower }}">
+          <div class="d-flex align-items-center px-4 py-2 border-bottom">
+            <div class="fw-semibold flex-grow-1">{{ test.name }}</div>
+            <div class="d-flex gap-4 text-muted small text-end">
+              {% if test.normal_range %}
+              <span class="d-none d-md-inline">{{ test.normal_range }}</span>
+              {% endif %}
+              <span style="width:60px;">{{ test.unit|default:"-" }}</span>
+              <span style="width:80px;" class="fw-semibold text-dark">
+                {{ hospital.currency_symbol }}{{ test.price }}
+              </span>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+        <div class="no-match-row d-none text-center text-muted py-3 small fst-italic">
+          No matching tests.
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  </div>{# end accordion #}
+</div>{# end col-md-9 #}
+</div>{# end row #}
+
+{# ── Live search script ───────────────────────────────────────────────────── #}
+<script>
+(function () {
+  const input = document.getElementById('labSearch');
+  const banner = document.getElementById('matchBanner');
+  const matchText = document.getElementById('matchText');
+
+  input.addEventListener('input', function () {
+    const term = this.value.toLowerCase().trim();
+    let totalMatches = 0;
+
+    document.querySelectorAll('.lab-section').forEach(function (section) {
+      const rows = section.querySelectorAll('.test-row');
+      let visible = 0;
+
+      rows.forEach(function (row) {
+        const name = row.dataset.name || '';
+        const unit = row.dataset.unit || '';
+        const match = !term || name.includes(term) || unit.includes(term);
+        row.style.display = match ? '' : 'none';
+        if (match) visible++;
+      });
+
+      totalMatches += visible;
+
+      // Show/hide no-match message
+      const noMatch = section.querySelector('.no-match-row');
+      if (noMatch) noMatch.classList.toggle('d-none', visible > 0 || !term);
+
+      // Update badge
+      const badge = section.querySelector('.sec-badge');
+      if (badge) badge.textContent = visible;
+
+      // Auto-expand/collapse sections
+      const collapseEl = section.querySelector('.accordion-collapse');
+      const btn = section.querySelector('.accordion-button');
+      if (term) {
+        if (visible > 0) {
+          collapseEl.classList.add('show');
+          btn.classList.remove('collapsed');
+          btn.setAttribute('aria-expanded', 'true');
+        } else {
+          collapseEl.classList.remove('show');
+          btn.classList.add('collapsed');
+          btn.setAttribute('aria-expanded', 'false');
+        }
+      }
+    });
+
+    if (term) {
+      banner.classList.remove('d-none');
+      matchText.textContent = totalMatches + ' test' + (totalMatches !== 1 ? 's' : '') + ' match "' + this.value + '"';
+    } else {
+      banner.classList.add('d-none');
+    }
+  });
+})();
+</script>
 {% endblock %}

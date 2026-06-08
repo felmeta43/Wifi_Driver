@@ -17,6 +17,7 @@ def generate_appointment_id():
 
 @login_required
 def appointment_list(request):
+    from django.core.paginator import Paginator
     query = request.GET.get('q', '')
     status = request.GET.get('status', '')
     date_filter = request.GET.get('date', '')
@@ -32,8 +33,11 @@ def appointment_list(request):
         appointments = appointments.filter(status=status)
     if date_filter:
         appointments = appointments.filter(appointment_date=date_filter)
+    paginator = Paginator(appointments, 10)
+    page_obj = paginator.get_page(request.GET.get('page'))
     return render(request, 'appointments/appointment_list.html', {
-        'appointments': appointments, 'query': query, 'status': status,
+        'appointments': page_obj, 'page_obj': page_obj,
+        'query': query, 'status': status,
         'date_filter': date_filter, 'status_choices': Appointment.STATUS_CHOICES,
     })
 
