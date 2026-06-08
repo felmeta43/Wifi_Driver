@@ -116,6 +116,8 @@ def prescription_create(request):
     patients = Patient.objects.filter(status='active').order_by('first_name')
     doctors = Doctor.objects.filter(status='active').select_related('user')
     medicines = Medicine.objects.filter(is_active=True).order_by('name')
+    pre_patient = request.GET.get('patient')
+    pre_doctor = request.GET.get('doctor')
     if request.method == 'POST':
         data = request.POST
         patient = get_object_or_404(Patient, pk=data.get('patient'))
@@ -148,7 +150,8 @@ def prescription_create(request):
         messages.success(request, f'Prescription {prescription.prescription_id} created!')
         return redirect('prescription_detail', pk=prescription.pk)
     return render(request, 'pharmacy/prescription_form.html', {
-        'patients': patients, 'doctors': doctors, 'medicines': medicines
+        'patients': patients, 'doctors': doctors, 'medicines': medicines,
+        'pre_patient': pre_patient, 'pre_doctor': pre_doctor,
     })
 
 

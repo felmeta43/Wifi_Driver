@@ -5,8 +5,11 @@ urlpatterns = [
     # OPD
     path('opd/', views.opd_list, name='opd_list'),
     path('opd/create/', views.opd_create, name='opd_create'),
+    path('opd/my-patients/', views.doctor_patient_flow, name='doctor_patient_flow'),
     path('opd/<int:pk>/', views.opd_detail, name='opd_detail'),
     path('opd/<int:pk>/status/', views.opd_status_update, name='opd_status_update'),
+    path('opd/<int:pk>/triage/', views.opd_triage, name='opd_triage'),
+    path('opd/<int:pk>/card-paid/', views.opd_mark_card_paid, name='opd_mark_card_paid'),
     # IPD
     path('ipd/', views.ipd_list, name='ipd_list'),
     path('ipd/admit/', views.ipd_admit, name='ipd_admit'),

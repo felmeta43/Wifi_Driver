@@ -2,34 +2,83 @@
 {% block title %}OPD Queue{% endblock %}
 {% block page_title %}OPD Queue{% endblock %}
 {% block content %}
+{% with r=user.role su=user.is_superuser %}
 <div class="d-flex justify-content-between align-items-center mb-3">
 <h5 class="mb-0 fw-semibold">Outpatient Department</h5>
+{% if r == 'admin' or r == 'receptionist' or su %}
 <a href="{% url 'opd_create' %}" class="btn btn-primary btn-sm"><i class="fas fa-plus me-1"></i>New OPD Visit</a>
+{% endif %}
 </div>
 <form method="get" class="row g-2 mb-3">
 <div class="col-md-3"><input type="date" name="date" class="form-control form-control-sm" value="{{ date_filter }}"></div>
 <div class="col-md-4"><div class="search-box"><i class="fas fa-search text-muted"></i><input type="text" name="q" value="{{ query }}" placeholder="Search patient..."></div></div>
 <div class="col-md-2"><button type="submit" class="btn btn-primary btn-sm w-100">Filter</button></div>
 </form>
+
+{# Workflow legend for staff #}
+<div class="d-flex gap-2 flex-wrap mb-3 small">
+  <span class="badge bg-secondary"><i class="fas fa-user-plus me-1"></i>1. Receptionist Registers</span>
+  <i class="fas fa-arrow-right text-muted"></i>
+  <span class="badge bg-info"><i class="fas fa-heartbeat me-1"></i>2. Nurse Takes Vitals &amp; Assigns Doctor</span>
+  <i class="fas fa-arrow-right text-muted"></i>
+  <span class="badge bg-warning text-dark"><i class="fas fa-cash-register me-1"></i>3. Cashier Marks Card Paid</span>
+  <i class="fas fa-arrow-right text-muted"></i>
+  <span class="badge bg-success"><i class="fas fa-user-md me-1"></i>4. Doctor Sees Patient</span>
+</div>
+
 <div class="row g-3">
 {% for visit in visits %}
 <div class="col-md-4">
-<div class="card">
+<div class="card {% if not visit.doctor %}border-info{% elif not visit.card_paid %}border-warning{% else %}border-0{% endif %}">
 <div class="card-body p-3">
 <div class="d-flex justify-content-between mb-2">
 <div>
-<div class="fw-bold">{{ visit.patient.get_full_name }}</div>
-<div class="text-muted small">{{ visit.visit_number }} &bull; {{ visit.arrival_time|time:"H:i" }}</div>
+  <div class="fw-bold">{{ visit.patient.get_full_name }}</div>
+  <div class="text-muted small">{{ visit.visit_number }} &bull; {{ visit.arrival_time|time:"H:i" }}</div>
 </div>
 <span class="badge {% if visit.triage_level == '1_resuscitation' %}bg-danger{% elif visit.triage_level == '2_emergent' %}bg-warning text-dark{% elif visit.triage_level == '3_urgent' %}bg-info{% else %}bg-success{% endif %} small">
 {{ visit.get_triage_level_display|truncatechars:10 }}
 </span>
 </div>
 <div class="text-muted small mb-2"><i class="fas fa-stethoscope me-1"></i>{{ visit.chief_complaint|truncatechars:60 }}</div>
-{% if visit.doctor %}<div class="text-muted small mb-2"><i class="fas fa-user-md me-1"></i>Dr. {{ visit.doctor.user.get_full_name }}</div>{% endif %}
-<div class="d-flex justify-content-between align-items-center">
-<span class="badge {% if visit.status == 'completed' %}bg-success{% elif visit.status == 'with_doctor' %}bg-primary{% elif visit.status == 'waiting' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">{{ visit.get_status_display }}</span>
-<a href="{% url 'opd_detail' visit.pk %}" class="btn btn-sm btn-outline-primary">View</a>
+
+{# Triage status steps #}
+<div class="d-flex gap-1 mb-2 flex-wrap">
+  <span class="badge bg-secondary"><i class="fas fa-check me-1"></i>Registered</span>
+  {% if visit.doctor %}
+  <span class="badge bg-info"><i class="fas fa-check me-1"></i>Dr. {{ visit.doctor.user.last_name }}</span>
+  {% else %}
+  <span class="badge bg-light text-muted border">Awaiting Nurse</span>
+  {% endif %}
+  {% if visit.card_paid %}
+  <span class="badge bg-warning text-dark"><i class="fas fa-check me-1"></i>Paid</span>
+  {% else %}
+  <span class="badge bg-light text-muted border">Card Pending</span>
+  {% endif %}
+</div>
+
+<div class="d-flex justify-content-between align-items-center mt-2 gap-1 flex-wrap">
+  <span class="badge {% if visit.status == 'completed' %}bg-success{% elif visit.status == 'with_doctor' %}bg-primary{% elif visit.status == 'waiting' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">{{ visit.get_status_display }}</span>
+  <div class="d-flex gap-1">
+    {# Nurse: triage button if no vitals yet #}
+    {% if r == 'nurse' or r == 'admin' or su %}
+    <a href="{% url 'opd_triage' visit.pk %}" class="btn btn-sm {% if visit.doctor %}btn-outline-info{% else %}btn-info{% %}">
+      <i class="fas fa-heartbeat"></i>
+    </a>
+    {% endif %}
+    {# Cashier: mark card paid if doctor assigned but not paid #}
+    {% if r == 'cashier' or r == 'admin' or su %}
+    {% if visit.doctor and not visit.card_paid %}
+    <form method="post" action="{% url 'opd_mark_card_paid' visit.pk %}" style="display:inline;">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-sm btn-warning" title="Mark card fee paid" onclick="return confirm('Mark card fee as paid for {{ visit.patient.get_full_name }}?')">
+        <i class="fas fa-cash-register"></i>
+      </button>
+    </form>
+    {% endif %}
+    {% endif %}
+    <a href="{% url 'opd_detail' visit.pk %}" class="btn btn-sm btn-outline-primary">View</a>
+  </div>
 </div>
 </div>
 </div>
@@ -38,8 +87,11 @@
 <div class="col-12 text-center py-5">
 <i class="fas fa-door-open fa-3x text-muted mb-3 d-block"></i>
 <h6 class="text-muted">No OPD visits for this date</h6>
+{% if r == 'admin' or r == 'receptionist' or su %}
 <a href="{% url 'opd_create' %}" class="btn btn-primary btn-sm mt-2">Register New Visit</a>
+{% endif %}
 </div>
 {% endfor %}
 </div>
+{% endwith %}
 {% endblock %}

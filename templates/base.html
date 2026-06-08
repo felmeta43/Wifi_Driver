@@ -144,7 +144,12 @@
         {# ── OPD / IPD — clinical & front-desk ────────────────────────── #}
         {% if r == 'admin' or r == 'doctor' or r == 'nurse' or r == 'receptionist' or su %}
         <div class="nav-label">OPD / IPD</div>
-        <a href="{% url 'opd_list' %}" class="nav-link {% if 'opd' in request.resolver_match.url_name %}active{% endif %}">
+        {% if r == 'doctor' %}
+        <a href="{% url 'doctor_patient_flow' %}" class="nav-link {% if 'doctor_patient_flow' in request.resolver_match.url_name %}active{% endif %}">
+            <i class="fas fa-user-clock"></i> My Patients
+        </a>
+        {% endif %}
+        <a href="{% url 'opd_list' %}" class="nav-link {% if 'opd_list' == request.resolver_match.url_name or 'opd_detail' == request.resolver_match.url_name or 'opd_triage' == request.resolver_match.url_name %}active{% endif %}">
             <i class="fas fa-door-open"></i> OPD Queue
         </a>
         <a href="{% url 'ipd_list' %}" class="nav-link {% if 'ipd' in request.resolver_match.url_name %}active{% endif %}">

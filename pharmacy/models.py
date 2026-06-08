@@ -3,14 +3,34 @@ from django.db import models
 
 class Medicine(models.Model):
     CATEGORY_CHOICES = [
-        ('tablet', 'Tablet'), ('capsule', 'Capsule'), ('syrup', 'Syrup'),
-        ('injection', 'Injection'), ('cream', 'Cream/Ointment'),
-        ('drops', 'Drops'), ('inhaler', 'Inhaler'), ('other', 'Other'),
+        ('antibiotic', 'Antibiotic'),
+        ('antiviral', 'Antiviral'),
+        ('antimalarial', 'Anti-Malarial'),
+        ('antifungal', 'Anti-Fungal'),
+        ('antiparasitic', 'Anti-Parasitic'),
+        ('analgesic', 'Analgesic / Anti-Pain'),
+        ('antiinflammatory', 'Anti-Inflammatory'),
+        ('steroid', 'Steroid'),
+        ('anticonvulsant', 'Anti-Convulsant'),
+        ('cardiovascular', 'Cardiovascular Drug'),
+        ('antihypertensive', 'Anti-Hypertensive'),
+        ('gi', 'Gastrointestinal Drug'),
+        ('respiratory', 'Respiratory Drug'),
+        ('antidiabetic', 'Anti-Diabetic Drug'),
+        ('emergency', 'Emergency Drug'),
+        ('fluid', 'IV Fluid'),
+        ('cephalosporin', 'Cephalosporin'),
+        ('eye_ear', 'Eye / Ear Preparation'),
+        ('vitamin', 'Vitamin & Supplement'),
+        ('psychiatric', 'Psychiatric Drug'),
+        ('hormonal', 'Hormonal Drug'),
+        ('dermatological', 'Dermatological'),
+        ('other', 'Other'),
     ]
 
     name = models.CharField(max_length=200)
     generic_name = models.CharField(max_length=200, blank=True)
-    category = models.CharField(max_length=15, choices=CATEGORY_CHOICES, default='tablet')
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='antibiotic')
     manufacturer = models.CharField(max_length=200, blank=True)
     description = models.TextField(blank=True)
     unit = models.CharField(max_length=30, default='pieces')

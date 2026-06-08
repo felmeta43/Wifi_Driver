@@ -33,10 +33,13 @@ class OPDVisit(models.Model):
     chief_complaint = models.TextField()
     vital_signs = models.JSONField(default=dict, blank=True)
     status = models.CharField(max_length=15, choices=STATUS_CHOICES, default='waiting')
+    card_paid = models.BooleanField(default=False, help_text='Card fee paid at cashier')
     referred_to = models.CharField(max_length=200, blank=True)
     notes = models.TextField(blank=True)
     registered_by = models.ForeignKey('accounts.User', on_delete=models.SET_NULL,
                                       null=True, related_name='opd_registrations')
+    triage_nurse = models.ForeignKey('accounts.User', on_delete=models.SET_NULL,
+                                     null=True, blank=True, related_name='opd_triage')
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

@@ -90,6 +90,90 @@ def opd_status_update(request, pk):
     return redirect('opd_detail', pk=pk)
 
 
+@login_required
+def opd_triage(request, pk):
+    """Nurse step: record vital signs and assign doctor."""
+    visit = get_object_or_404(OPDVisit, pk=pk)
+    doctors = Doctor.objects.filter(status='active').select_related('user')
+    if request.method == 'POST':
+        doc_id = request.POST.get('doctor')
+        doctor = Doctor.objects.filter(pk=doc_id).first() if doc_id else None
+        vitals = {k: request.POST.get(k, '') for k in
+                  ['blood_pressure', 'temperature', 'pulse', 'weight', 'height',
+                   'oxygen_saturation', 'respiratory_rate']}
+        visit.doctor = doctor
+        visit.vital_signs = {k: v for k, v in vitals.items() if v}
+        visit.triage_nurse = request.user
+        visit.triage_level = request.POST.get('triage_level', visit.triage_level)
+        visit.save()
+        messages.success(request, f'Vitals recorded and doctor assigned for {visit.patient.get_full_name()}.')
+        return redirect('opd_list')
+    return render(request, 'clinical/opd_triage_form.html', {
+        'visit': visit, 'doctors': doctors,
+        'triage_choices': OPDVisit.TRIAGE_CHOICES,
+    })
+
+
+@login_required
+def opd_mark_card_paid(request, pk):
+    """Cashier step: mark OPD card fee as paid."""
+    visit = get_object_or_404(OPDVisit, pk=pk)
+    if request.method == 'POST':
+        visit.card_paid = True
+        visit.save(update_fields=['card_paid'])
+        messages.success(request, f'Card fee marked as paid for {visit.patient.get_full_name()}. Patient sent to doctor queue.')
+    return redirect('opd_list')
+
+
+@login_required
+def doctor_patient_flow(request):
+    """Doctor's patient queue: today's OPD patients assigned to this doctor with card paid."""
+    from datetime import date
+    try:
+        doctor = request.user.doctor_profile
+    except Exception:
+        messages.error(request, 'Doctor profile not found.')
+        return redirect('dashboard')
+
+    today = date.today()
+    visits = OPDVisit.objects.filter(
+        doctor=doctor, visit_date=today, card_paid=True
+    ).select_related('patient').exclude(status__in=['completed', 'referred'])
+
+    # Gather all services for each patient
+    patient_data = []
+    for visit in visits:
+        patient = visit.patient
+        from laboratory.models import LabOrder
+        from pharmacy.models import Prescription
+        lab_orders = LabOrder.objects.filter(patient=patient, doctor=doctor).order_by('-ordered_at')[:5]
+        prescriptions = Prescription.objects.filter(patient=patient, doctor=doctor).order_by('-created_at')[:5]
+        radiology = RadiologyOrder.objects.filter(patient=patient, requesting_doctor=doctor).order_by('-ordered_at')[:5]
+        from services.models import ServiceOrder
+        service_orders = ServiceOrder.objects.filter(patient=patient, doctor=doctor).order_by('-created_at')[:5]
+        clinical_notes = ClinicalNote.objects.filter(patient=patient, opd_visit=visit).order_by('-created_at')[:5]
+        patient_data.append({
+            'visit': visit,
+            'patient': patient,
+            'lab_orders': lab_orders,
+            'prescriptions': prescriptions,
+            'radiology': radiology,
+            'service_orders': service_orders,
+            'clinical_notes': clinical_notes,
+        })
+
+    completed_today = OPDVisit.objects.filter(
+        doctor=doctor, visit_date=today, status='completed'
+    ).count()
+
+    return render(request, 'clinical/doctor_patient_flow.html', {
+        'patient_data': patient_data,
+        'today': today,
+        'completed_today': completed_today,
+        'doctor': doctor,
+    })
+
+
 # ─── IPD ─────────────────────────────────────────────────────────────────────
 
 @login_required
@@ -504,6 +588,8 @@ def radiology_order_list(request):
 def radiology_order_create(request):
     patients = Patient.objects.filter(status='active').order_by('first_name')
     doctors = Doctor.objects.filter(status='active').select_related('user')
+    pre_patient = request.GET.get('patient')
+    pre_doctor = request.GET.get('doctor')
     if request.method == 'POST':
         d = request.POST
         patient = get_object_or_404(Patient, pk=d['patient'])
@@ -523,6 +609,7 @@ def radiology_order_create(request):
         'patients': patients, 'doctors': doctors,
         'modality_choices': RadiologyOrder.MODALITY_CHOICES,
         'priority_choices': [('routine','Routine'),('urgent','Urgent'),('emergency','Emergency')],
+        'pre_patient': pre_patient, 'pre_doctor': pre_doctor,
     })
 
 

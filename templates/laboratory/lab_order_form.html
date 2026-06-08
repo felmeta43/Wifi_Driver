@@ -10,12 +10,12 @@
 <div class="col-md-6"><label class="form-label fw-semibold">Patient *</label>
 <select name="patient" class="form-select" required>
 <option value="">-- Select Patient --</option>
-{% for p in patients %}<option value="{{ p.pk }}">{{ p.get_full_name }} ({{ p.patient_id }})</option>{% endfor %}
+{% for p in patients %}<option value="{{ p.pk }}" {% if pre_patient and pre_patient == p.pk|stringformat:"s" %}selected{% endif %}>{{ p.get_full_name }} ({{ p.patient_id }})</option>{% endfor %}
 </select></div>
 <div class="col-md-6"><label class="form-label fw-semibold">Doctor *</label>
 <select name="doctor" class="form-select" required>
 <option value="">-- Select Doctor --</option>
-{% for d in doctors %}<option value="{{ d.pk }}">Dr. {{ d.user.get_full_name }}</option>{% endfor %}
+{% for d in doctors %}<option value="{{ d.pk }}" {% if pre_doctor and pre_doctor == d.pk|stringformat:"s" %}selected{% endif %}>Dr. {{ d.user.get_full_name }}</option>{% endfor %}
 </select></div>
 </div>
 <h6 class="fw-bold border-bottom pb-2 mb-3">Select Tests</h6>

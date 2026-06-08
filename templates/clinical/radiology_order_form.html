@@ -18,7 +18,7 @@
           <select name="patient" class="form-select" required id="patientSelect">
             <option value="">— Select Patient —</option>
             {% for p in patients %}
-            <option value="{{ p.pk }}">{{ p.get_full_name }} ({{ p.patient_id }})</option>
+            <option value="{{ p.pk }}" {% if pre_patient and pre_patient == p.pk|stringformat:"s" %}selected{% endif %}>{{ p.get_full_name }} ({{ p.patient_id }})</option>
             {% endfor %}
           </select>
         </div>
@@ -27,7 +27,7 @@
           <select name="requesting_doctor" class="form-select" required>
             <option value="">— Select Doctor —</option>
             {% for doc in doctors %}
-            <option value="{{ doc.pk }}">Dr. {{ doc.user.get_full_name }} — {{ doc.specialization }}</option>
+            <option value="{{ doc.pk }}" {% if pre_doctor and pre_doctor == doc.pk|stringformat:"s" %}selected{% endif %}>Dr. {{ doc.user.get_full_name }} — {{ doc.specialization }}</option>
             {% endfor %}
           </select>
         </div>

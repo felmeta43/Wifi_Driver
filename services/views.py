@@ -87,6 +87,20 @@ def service_edit(request, pk):
 
 
 @login_required
+def service_update_price(request, pk):
+    service = get_object_or_404(Service, pk=pk)
+    if request.method == 'POST':
+        new_price = request.POST.get('price', '').strip()
+        if new_price:
+            service.price = float(new_price)
+            service.save(update_fields=['price'])
+            messages.success(request, f'Price updated for {service.name}.')
+        else:
+            messages.error(request, 'Price cannot be empty.')
+    return redirect('service_list')
+
+
+@login_required
 def category_list(request):
     cats = ServiceCategory.objects.all()
     if request.method == 'POST':
@@ -120,6 +134,8 @@ def service_order_create(request):
     patients = Patient.objects.filter(status='active').order_by('first_name')
     doctors = Doctor.objects.filter(status='active').select_related('user')
     services = Service.objects.filter(is_active=True).order_by('name')
+    pre_patient = request.GET.get('patient')
+    pre_doctor = request.GET.get('doctor')
     if request.method == 'POST':
         d = request.POST
         patient = get_object_or_404(Patient, pk=d['patient'])
@@ -143,6 +159,7 @@ def service_order_create(request):
         return redirect('service_order_detail', pk=order.pk)
     return render(request, 'services/order_form.html', {
         'patients': patients, 'doctors': doctors, 'services': services,
+        'pre_patient': pre_patient, 'pre_doctor': pre_doctor,
     })
 
 

@@ -66,6 +66,8 @@ def lab_order_create(request):
     patients = Patient.objects.filter(status='active').order_by('first_name')
     doctors = Doctor.objects.filter(status='active').select_related('user')
     tests = LabTest.objects.filter(is_active=True)
+    pre_patient = request.GET.get('patient')
+    pre_doctor = request.GET.get('doctor')
     if request.method == 'POST':
         data = request.POST
         patient = get_object_or_404(Patient, pk=data.get('patient'))
@@ -86,7 +88,8 @@ def lab_order_create(request):
         messages.success(request, f'Lab order {order.order_id} created!')
         return redirect('lab_order_detail', pk=order.pk)
     return render(request, 'laboratory/lab_order_form.html', {
-        'patients': patients, 'doctors': doctors, 'tests': tests
+        'patients': patients, 'doctors': doctors, 'tests': tests,
+        'pre_patient': pre_patient, 'pre_doctor': pre_doctor,
     })
 
 

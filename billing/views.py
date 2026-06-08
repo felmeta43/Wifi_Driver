@@ -160,25 +160,27 @@ def _build_collection_summary(cashier, date):
     """Calculate payment totals for a cashier on a given date from Payment records."""
     from services.models import InstantService
     from django.db.models import Sum
+    from decimal import Decimal
 
+    ZERO = Decimal('0')
     payments = Payment.objects.filter(
         received_by=cashier,
         payment_date__date=date,
     )
     totals = {
-        'cash': payments.filter(method='cash').aggregate(t=Sum('amount'))['t'] or 0,
-        'card': payments.filter(method='card').aggregate(t=Sum('amount'))['t'] or 0,
-        'insurance': payments.filter(method='insurance').aggregate(t=Sum('amount'))['t'] or 0,
-        'mobile_money': payments.filter(method='mobile_money').aggregate(t=Sum('amount'))['t'] or 0,
-        'bank_transfer': payments.filter(method='bank_transfer').aggregate(t=Sum('amount'))['t'] or 0,
-        'check': payments.filter(method='check').aggregate(t=Sum('amount'))['t'] or 0,
+        'cash': payments.filter(method='cash').aggregate(t=Sum('amount'))['t'] or ZERO,
+        'card': payments.filter(method='card').aggregate(t=Sum('amount'))['t'] or ZERO,
+        'insurance': payments.filter(method='insurance').aggregate(t=Sum('amount'))['t'] or ZERO,
+        'mobile_money': payments.filter(method='mobile_money').aggregate(t=Sum('amount'))['t'] or ZERO,
+        'bank_transfer': payments.filter(method='bank_transfer').aggregate(t=Sum('amount'))['t'] or ZERO,
+        'check': payments.filter(method='check').aggregate(t=Sum('amount'))['t'] or ZERO,
     }
     instant = InstantService.objects.filter(
         performed_by=cashier,
         created_at__date=date,
-    ).aggregate(t=Sum('total_price'))['t'] or 0
-    total = sum(totals.values()) + float(instant)
-    return totals, float(instant), total, payments.count()
+    ).aggregate(t=Sum('total_price'))['t'] or ZERO
+    total = sum(totals.values()) + instant
+    return totals, instant, total, payments.count()
 
 
 @login_required
